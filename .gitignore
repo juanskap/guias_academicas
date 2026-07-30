@@ -1,0 +1,6 @@
+vendor/
+output/
+test_*.php
+check_table.php
+*.log
+.git/
