@@ -182,7 +182,12 @@ body {
             <div class="doc-group-header" onclick="this.parentElement.classList.toggle('open')">
                 <div class="info">
                     <span class="title"><?= htmlspecialchars(ucwords($pair['guia']['title'] ?? $pair['anexo']['title'] ?? '')) ?></span>
-                    <span class="date"><?= date('d/m/Y H:i', $pair['guia']['time'] ?? $pair['anexo']['time'] ?? 0) ?></span>
+                    <span class="date"><?php
+                        $y = substr($ts, 0, 4); $mo = substr($ts, 4, 2);
+                        $d = substr($ts, 6, 2); $h = substr($ts, 9, 2);
+                        $mi = substr($ts, 11, 2);
+                        echo "$d/$mo/$y $h:$mi";
+                    ?></span>
                 </div>
                 <span class="arrow">&#9660;</span>
             </div>

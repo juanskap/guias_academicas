@@ -1,6 +1,7 @@
 vendor/
 output/
-test_*.php
+jobs/*.json
+test_*
 check_table.php
 *.log
 .git/
