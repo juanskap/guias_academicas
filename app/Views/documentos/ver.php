@@ -73,7 +73,7 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
         </div>
         <?php
         $ext = strtolower(pathinfo($documento['ruta'], PATHINFO_EXTENSION));
-        if (in_array($ext, ['pdf', 'txt', 'docx', 'odt'], true)):
+        if (in_array($ext, ['pdf', 'txt', 'docx', 'odt', 'doc', 'rtf'], true)):
         ?>
         <iframe src="<?= url('documentos/previsualizar/' . $documento['id']) ?>" class="w-full h-[600px] border border-gray-200 rounded-lg bg-gray-50" title="Vista previa del documento"></iframe>
         <?php else: ?>
@@ -84,8 +84,8 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
         <?php endif; ?>
     </div>
 
-    <?php if (in_array($ext, ['docx', 'odt'], true)): ?>
-    <p class="text-xs text-gray-500 -mt-3 mb-6"><strong>Nota:</strong> la vista previa de Word muestra solo el texto. Para ver el formato exacto (imágenes, tablas) usa el botón <strong>⬇ Descargar</strong>.</p>
+    <?php if (in_array($ext, ['docx', 'odt', 'doc'], true)): ?>
+    <p class="text-xs text-gray-500 -mt-3 mb-6"><strong>Vista previa:</strong> el formato original se convierte automáticamente. Para mejor resultado, también puedes subir el documento en PDF (Archivo → Guardar como PDF).</p>
     <?php endif; ?>
 
     <!-- Hilo de observaciones -->

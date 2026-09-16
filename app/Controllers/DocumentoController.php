@@ -228,10 +228,26 @@ class DocumentoController extends Controller
             exit;
         }
 
-        // Word/OpenDocument: extraer texto del ZIP interno y mostrarlo como HTML
-        if (in_array($ext, ['docx', 'odt'], true)) {
-            header('Content-Type: text/html; charset=UTF-8');
-            exit($this->textoOffice($ruta, $ext));
+        // Word/OpenDocument: convertir a PDF con LibreOffice y mostrarlo
+        if (in_array($ext, ['docx', 'odt', 'doc', 'rtf'], true)) {
+            $pdf = \App\Helpers\OfficeConverter::toPdf($ruta);
+
+            if ($pdf) {
+                header('Content-Type: application/pdf');
+                header('Content-Disposition: inline; filename="' . basename($doc['nombre_original'], '.' . $ext) . '.pdf"');
+                header('Content-Length: ' . filesize($pdf));
+                readfile($pdf);
+                exit;
+            }
+
+            // Fallback: si LibreOffice no está disponible, mostrar texto plano
+            if (in_array($ext, ['docx', 'odt'], true)) {
+                header('Content-Type: text/html; charset=UTF-8');
+                exit($this->textoOffice($ruta, $ext));
+            }
+
+            http_response_code(415);
+            exit('No se pudo previsualizar este documento. Intenta exportarlo como PDF y subirlo nuevamente.');
         }
 
         // Formatos no previsualizables
@@ -283,8 +299,8 @@ class DocumentoController extends Controller
         $parrafos = array_map(fn ($p) => trim($p), $parrafos);
         $parrafos = array_values(array_filter($parrafos, fn ($p) => $p !== ''));
 
-        $html = '<div style="font-family:Georgia,serif;font-size:14px;line-height:1.6;padding:10px;">';
-        $html .= '<p style="font-style:italic;color:#888;border-bottom:1px solid #ddd;padding-bottom:8px;">Vista previa de texto extraída del documento (' . strtoupper($ext) . '). Para ver el formato original usa "Descargar".</p>';
+        $html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;padding:10px;">';
+        $html .= '<p style="background:#fff3cd;border:1px solid #ffc107;color:#856404;padding:8px 12px;border-radius:6px;font-size:13px;">⚠ LibreOffice no está disponible. Mostrando texto sin formato. Para el formato original, sube el documento en PDF (Archivo → Guardar como PDF).</p>';
         if (!$parrafos) {
             $html .= '<p style="color:#999;">No se encontró texto legible en este documento (¿solo imágenes? Usa la descarga para revisar el original).</p>';
         }

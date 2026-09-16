@@ -4,6 +4,20 @@
  * Funciones auxiliares globales
  */
 
+/** Crea (si no existe) y devuelve una carpeta temporal propia de la app */
+function temp_dir(string $nombre): string
+{
+    $base = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'sigep';
+    if (!is_dir($base)) {
+        mkdir($base, 0777, true);
+    }
+    $dir = $base . DIRECTORY_SEPARATOR . $nombre;
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
+    }
+    return $dir;
+}
+
 /** Escapa texto para salida HTML */
 function e(?string $value): string
 {

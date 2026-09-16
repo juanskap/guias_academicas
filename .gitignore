@@ -11,6 +11,11 @@ node_modules/
 /storage/uploads/finales/*
 !/storage/uploads/finales/.htaccess
 
+# Caché de conversiones (LibreOffice → PDF) y perfil de LibreOffice
+/storage/uploads/vistaprevia/*
+/storage/uploads/vistaprevia/.htaccess
+/storage/uploads/libreoffice_profile/*
+
 # Logs y temporales
 *.log
 *.tmp
