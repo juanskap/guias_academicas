@@ -126,7 +126,7 @@ class DocumentoController extends Controller
             notificar($dest, 'Documento subido', "Se subió el documento de la etapa \"{$etapa['nombre']}\" (v{$version}).", $proyectoId, 'documento', Auth::id());
 
             flash('success', "Documento subido (versión {$version}).");
-            redirect_to('documentos/ver/' . $docId);
+            redirect_to('proyectos/ver/' . $proyectoId);
         } catch (\Throwable $e) {
             $db->rollBack();
             @unlink(UPLOAD_DOCUMENTOS . '/' . $nombreGuardado);
