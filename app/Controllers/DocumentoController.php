@@ -34,6 +34,11 @@ class DocumentoController extends Controller
             redirect_to('proyectos/ver/' . $proyectoId);
         }
 
+        if (!(new Proyecto())->etapaDesbloqueada($proyectoId, $etapaId, (int) $proyecto['tipo_proyecto_id'])) {
+            flash('error', 'Debes completar y aprobar las etapas anteriores antes de subir documento en esta etapa.');
+            redirect_to('proyectos/ver/' . $proyectoId);
+        }
+
         $docActual = (new Documento())->actualDeEtapa($proyectoId, $etapaId, 'trabajo');
 
         $this->view('documentos/subir', [
@@ -66,6 +71,11 @@ class DocumentoController extends Controller
         $etapa = (new Etapa())->find($etapaId);
         if (!$etapa || (int) $etapa['tipo_proyecto_id'] !== (int) $proyecto['tipo_proyecto_id']) {
             flash('error', 'Etapa no válida para este proyecto.');
+            redirect_to('proyectos/ver/' . $proyectoId);
+        }
+
+        if (!(new Proyecto())->etapaDesbloqueada($proyectoId, $etapaId, (int) $proyecto['tipo_proyecto_id'])) {
+            flash('error', 'Debes completar y aprobar las etapas anteriores antes de subir documento en esta etapa.');
             redirect_to('proyectos/ver/' . $proyectoId);
         }
 
@@ -218,9 +228,71 @@ class DocumentoController extends Controller
             exit;
         }
 
+        // Word/OpenDocument: extraer texto del ZIP interno y mostrarlo como HTML
+        if (in_array($ext, ['docx', 'odt'], true)) {
+            header('Content-Type: text/html; charset=UTF-8');
+            exit($this->textoOffice($ruta, $ext));
+        }
+
         // Formatos no previsualizables
         http_response_code(415);
         exit('Este formato no se puede previsualizar en el navegador.');
+    }
+
+    /** Extrae el texto legible de un .docx o .odt (son ZIP con XML interno) */
+    private function textoOffice(string $ruta, string $ext): string
+    {
+        if (!class_exists('ZipArchive') || !extension_loaded('zip')) {
+            http_response_code(415);
+            return 'La extensión ZIP no está disponible en este servidor.';
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($ruta) !== true) {
+            http_response_code(415);
+            return 'No se pudo leer este documento para la vista previa.';
+        }
+
+        // .docx → word/document.xml | .odt → content.xml
+        $archivoInterno = $ext === 'docx' ? 'word/document.xml' : 'content.xml';
+        $xml = $zip->getFromName($archivoInterno);
+        $zip->close();
+
+        if ($xml === false) {
+            http_response_code(415);
+            return 'Formato interno no reconocido.';
+        }
+
+        // Extraer párrafos (paragraphs) según el formato
+        if ($ext === 'docx') {
+            preg_match_all('#<w:p(?:\s[^>]*)?>(.*?)</w:p>#s', $xml, $m);
+            $parrafos = $m[1] ?? [];
+            foreach ($parrafos as &$p) {
+                preg_match_all('#<w:t(?:\s[^>]*)?>(.*?)</w:t>#s', $p, $tm);
+                $p = implode('', $tm[1] ?? []);
+            }
+        } else { // odt
+            preg_match_all('#<text:p(?:\s[^>]*)?>(.*?)</text:p>#s', $xml, $m);
+            $parrafos = $m[1] ?? [];
+            foreach ($parrafos as &$p) {
+                $p = preg_replace('#<text:tab[^>]*/>#', "\t", $p);
+                $p = strip_tags($p);
+            }
+        }
+
+        $parrafos = array_map(fn ($p) => trim($p), $parrafos);
+        $parrafos = array_values(array_filter($parrafos, fn ($p) => $p !== ''));
+
+        $html = '<div style="font-family:Georgia,serif;font-size:14px;line-height:1.6;padding:10px;">';
+        $html .= '<p style="font-style:italic;color:#888;border-bottom:1px solid #ddd;padding-bottom:8px;">Vista previa de texto extraída del documento (' . strtoupper($ext) . '). Para ver el formato original usa "Descargar".</p>';
+        if (!$parrafos) {
+            $html .= '<p style="color:#999;">No se encontró texto legible en este documento (¿solo imágenes? Usa la descarga para revisar el original).</p>';
+        }
+        foreach ($parrafos as $p) {
+            $html .= '<p>' . nl2br(e($p)) . '</p>';
+        }
+        $html .= '</div>';
+        return $html;
     }
 
     /** Crea una observación sobre un documento (tutor o admin) */

@@ -123,6 +123,30 @@ class Proyecto extends Model
         );
     }
 
+    /** ¿Puede el estudiante subir documento en esta etapa? (secuencial: anteriores deben estar aprobadas) */
+    public function etapaDesbloqueada(int $proyectoId, int $etapaId, int $tipoProyectoId): bool
+    {
+        $etapas = $this->etapasConEstado($proyectoId, $tipoProyectoId);
+
+        $ordenActual = null;
+        foreach ($etapas as $et) {
+            if ((int) $et['id'] === $etapaId) {
+                $ordenActual = (int) $et['orden'];
+                break;
+            }
+        }
+        if ($ordenActual === null) {
+            return false;
+        }
+
+        foreach ($etapas as $et) {
+            if ((int) $et['orden'] < $ordenActual && $et['estado_etapa'] !== 'aprobada') {
+                return false; // hay una etapa anterior sin aprobar
+            }
+        }
+        return true;
+    }
+
     /** Genera el siguiente código de proyecto */
     public function nextCodigo(): string
     {

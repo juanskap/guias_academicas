@@ -58,9 +58,15 @@ $rol = Auth::role();
         </div>
 
         <ol class="space-y-2">
+            <?php $anterioresAprobadas = true; ?>
             <?php foreach ($etapas as $i => $et): ?>
-            <li class="flex items-center gap-3 p-3 rounded-lg <?= $et['estado_etapa'] === 'aprobada' ? 'bg-green-50 border border-green-200' : 'bg-gray-50' ?>">
-                <span class="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold <?= $et['estado_etapa'] === 'aprobada' ? 'bg-green-500 text-white' : 'bg-[#dceef7] text-[#004764]' ?>">
+            <?php
+                $esActual = $anterioresAprobadas && $et['estado_etapa'] !== 'aprobada';
+                $bloqueada = !$esActual && $et['estado_etapa'] !== 'aprobada' && $rol === 'estudiante';
+                if ($et['estado_etapa'] !== 'aprobada') { $anterioresAprobadas = false; }
+            ?>
+            <li class="flex items-center gap-3 p-3 rounded-lg <?= $et['estado_etapa'] === 'aprobada' ? 'bg-green-50 border border-green-200' : ($bloqueada ? 'bg-gray-50 opacity-60' : 'bg-gray-50') ?>">
+                <span class="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold <?= $et['estado_etapa'] === 'aprobada' ? 'bg-green-500 text-white' : ($esActual ? 'bg-[#005880] text-white' : 'bg-[#dceef7] text-[#004764]') ?>">
                     <?= $et['estado_etapa'] === 'aprobada' ? '✓' : $i + 1 ?>
                 </span>
                 <div class="flex-1">
@@ -68,6 +74,10 @@ $rol = Auth::role();
                     <p class="text-xs text-gray-400">
                         <?php if ($et['estado_etapa'] === 'aprobada'): ?>
                             Etapa aprobada · <?= e($et['final_nombre'] ?? 'Documento final') ?>
+                        <?php elseif ($bloqueada && $et['trabajo_id']): ?>
+                            Documento v<?= (int) $et['trabajo_version'] ?> · <?= e(ucwords(str_replace('_', ' ', $et['trabajo_estado']))) ?> · 🔒 Completa las etapas anteriores
+                        <?php elseif ($bloqueada): ?>
+                            Pendiente de documento · 🔒 Completa las etapas anteriores
                         <?php elseif ($et['trabajo_id']): ?>
                             Documento v<?= (int) $et['trabajo_version'] ?> · <?= e(ucwords(str_replace('_', ' ', $et['trabajo_estado']))) ?>
                         <?php else: ?>
@@ -82,7 +92,7 @@ $rol = Auth::role();
                     <?php if ($et['estado_etapa'] === 'aprobada' && $et['final_id']): ?>
                     <a href="<?= url('documentos/ver/' . $et['final_id']) ?>" class="text-xs px-3 py-1.5 bg-[#0B803A] hover:bg-[#0a6b31] text-white rounded-lg">Final</a>
                     <?php endif; ?>
-                    <?php if ($rol === 'estudiante' && $et['estado_etapa'] !== 'aprobada'): ?>
+                    <?php if ($rol === 'estudiante' && $esActual): ?>
                     <a href="<?= url('documentos/subir-form/' . $proyecto['id'] . '/' . $et['id']) ?>" class="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg">Subir documento</a>
                     <?php endif; ?>
                 </div>
