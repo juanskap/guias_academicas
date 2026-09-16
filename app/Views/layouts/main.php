@@ -32,6 +32,7 @@ use App\Core\Auth;
             <?php if ($rol === 'admin'): ?>
             <a href="<?= url('usuarios') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">👥 Usuarios</a>
             <a href="<?= url('tipos-proyecto') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">🗂️ Tipos de proyecto</a>
+            <a href="<?= url('configuracion') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">⚙️ Configuración</a>
             <?php endif; ?>
 
             <?php if ($rol === 'docente'): ?>

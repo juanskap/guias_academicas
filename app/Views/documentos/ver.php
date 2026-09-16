@@ -60,7 +60,7 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
         <input type="file" name="documento" accept=".pdf,.doc,.docx,.txt,.odt" required class="text-sm">
         <button type="submit" class="px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition">Subir v<?= (int) $documento['version'] + 1 ?></button>
     </form>
-    <p class="text-xs text-gray-400 mt-2">Permitidos: <?= e(implode(', ', ALLOWED_EXTENSIONS)) ?> · máx. 10 MB · se conserva solo la versión actual.</p>
+    <p class="text-xs text-gray-400 mt-2">Permitidos: <?= e(implode(', ', ALLOWED_EXTENSIONS)) ?> · máx. <?= (int) ((new \App\Models\Configuracion())->getInt('max_upload_mb', (int) (MAX_FILE_SIZE / 1024 / 1024))) ?: (int) (MAX_FILE_SIZE / 1024 / 1024) ?> MB · se conserva solo la versión actual.</p>
 </div>
 <?php endif; ?>
 

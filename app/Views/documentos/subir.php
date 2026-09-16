@@ -4,6 +4,8 @@
 /** @var array|null $docActual */
 use App\Core\Request;
 $nuevaVersion = $docActual ? (int) $docActual['version'] + 1 : 1;
+$maxMbConfigurado = (new \App\Models\Configuracion())->getInt('max_upload_mb', (int) (MAX_FILE_SIZE / 1024 / 1024));
+$maxMbConfigurado = $maxMbConfigurado < 1 ? (int) (MAX_FILE_SIZE / 1024 / 1024) : $maxMbConfigurado;
 ?>
 
 <div class="max-w-xl mx-auto">
@@ -26,7 +28,7 @@ $nuevaVersion = $docActual ? (int) $docActual['version'] + 1 : 1;
 
             <label class="block text-sm text-gray-600 mb-1">Archivo (<?= $docActual ? 'nueva versión v' . $nuevaVersion : 'v1' ?>)</label>
             <input type="file" name="documento" accept=".pdf,.doc,.docx,.txt,.odt" required class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
-            <p class="text-xs text-gray-400 mt-1 mb-4">Permitidos: <?= e(implode(', ', ALLOWED_EXTENSIONS)) ?> · máximo 10 MB</p>
+            <p class="text-xs text-gray-400 mt-1 mb-4">Permitidos: <?= e(implode(', ', ALLOWED_EXTENSIONS)) ?> · máximo <?= $maxMbConfigurado ?> MB</p>
 
             <button type="submit" class="w-full px-4 py-2 bg-[#005880] hover:bg-[#004764] text-white text-sm font-semibold rounded-lg transition">Subir documento</button>
         </form>

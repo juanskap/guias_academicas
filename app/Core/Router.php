@@ -15,14 +15,15 @@ class Router
 
     /** Mapa de alias de URL → controlador */
     private array $aliases = [
-        'usuarios' => 'UsuarioController',
-        'tipos-proyecto' => 'TipoProyectoController',
-        'mis-proyectos' => 'ProyectoController',
-        'proyectos' => 'ProyectoController',
-        'documentos' => 'DocumentoController',
-        'plan' => 'PlanController',
-        'calendario' => 'CalendarioController',
-        'notificaciones' => 'NotificacionController',
+        'usuarios'        => 'UsuarioController',
+        'tipos-proyecto'  => 'TipoProyectoController',
+        'configuracion'   => 'ConfiguracionController',
+        'mis-proyectos'   => 'ProyectoController',
+        'proyectos'       => 'ProyectoController',
+        'documentos'      => 'DocumentoController',
+        'plan'            => 'PlanController',
+        'calendario'      => 'CalendarioController',
+        'notificaciones'  => 'NotificacionController',
     ];
 
     public function dispatch(string $url): void

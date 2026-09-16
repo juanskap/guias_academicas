@@ -556,14 +556,27 @@ class DocumentoController extends Controller
         if ($file['error'] !== UPLOAD_ERR_OK) {
             return 'Error al subir el archivo.';
         }
-        if ($file['size'] > MAX_FILE_SIZE) {
-            return 'El archivo supera el tamaño máximo permitido (10 MB).';
+        if ($file['size'] > $this->maxUploadBytes()) {
+            return 'El archivo supera el tamaño máximo permitido (' . $this->maxUploadMb() . ' MB).';
         }
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, ALLOWED_EXTENSIONS, true)) {
             return 'Tipo de archivo no permitido. Usa: ' . implode(', ', ALLOWED_EXTENSIONS);
         }
         return null;
+    }
+
+    /** Tamaño máximo configurado (en bytes), con límite del servidor PHP como tope */
+    private function maxUploadBytes(): int
+    {
+        return $this->maxUploadMb() * 1024 * 1024;
+    }
+
+    /** Tamaño máximo configurado (en MB) */
+    private function maxUploadMb(): int
+    {
+        $mb = (new \App\Models\Configuracion())->getInt('max_upload_mb', (int) (MAX_FILE_SIZE / 1024 / 1024));
+        return $mb < 1 ? (int) (MAX_FILE_SIZE / 1024 / 1024) : $mb;
     }
 
     private function canAccess(array $proyecto): bool
