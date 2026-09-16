@@ -87,7 +87,10 @@ class DocumentoController extends Controller
         }
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $version = (new Documento())->siguienteVersion($proyectoId, $etapaId, 'trabajo');
+        $docModel = new Documento();
+        $subida = $docModel->versionParaSubida($proyectoId, $etapaId, 'trabajo');
+        $version = $subida['version'];
+        $reemplazoId = $subida['documento_id'] ? (int) $subida['documento_id'] : null;
         $nombreGuardado = sprintf('p%d_e%d_v%d_%s.%s', $proyectoId, $etapaId, $version, bin2hex(random_bytes(6)), $ext);
 
         if (!is_dir(UPLOAD_DOCUMENTOS)) {
@@ -102,23 +105,45 @@ class DocumentoController extends Controller
         $db = Database::getConnection();
         try {
             $db->beginTransaction();
-            $docId = (new Documento())->create([
-                'proyecto_id' => $proyectoId,
-                'etapa_id' => $etapaId,
-                'tipo' => 'trabajo',
-                'nombre_original' => $file['name'],
-                'ruta' => $nombreGuardado,
-                'version' => $version,
-                'subido_por' => Auth::id(),
-                'estado' => 'enviado',
-            ]);
+            if ($reemplazoId !== null) {
+                // Reemplaza la versión aún no revisada (mismo número de versión)
+                $anterior = $docModel->find($reemplazoId);
+                $docId = $reemplazoId;
+                $docModel->update($docId, [
+                    'nombre_original' => $file['name'],
+                    'ruta' => $nombreGuardado,
+                    'version' => $version,
+                    'subido_por' => Auth::id(),
+                    'estado' => 'enviado',
+                ]);
+                if ($anterior && !empty($anterior['ruta'])) {
+                    $viejo = UPLOAD_DOCUMENTOS . '/' . basename($anterior['ruta']);
+                    if (is_file($viejo)) {
+                        @unlink($viejo);
+                    }
+                }
+            } else {
+                $docId = $docModel->create([
+                    'proyecto_id' => $proyectoId,
+                    'etapa_id' => $etapaId,
+                    'tipo' => 'trabajo',
+                    'nombre_original' => $file['name'],
+                    'ruta' => $nombreGuardado,
+                    'version' => $version,
+                    'subido_por' => Auth::id(),
+                    'estado' => 'enviado',
+                ]);
+            }
 
             // Si el proyecto estaba en borrador, pasa a enviado
             if ($proyecto['estado'] === 'borrador') {
                 (new Proyecto())->update($proyectoId, ['estado' => 'enviado']);
             }
 
-            $this->registrarHistorial($proyectoId, 'Subida de documento', "Documento subido a etapa {$etapa['nombre']} (v{$version})");
+            $detalle = $reemplazoId !== null
+                ? "Documento reemplazado en etapa {$etapa['nombre']} (v{$version})"
+                : "Documento subido a etapa {$etapa['nombre']} (v{$version})";
+            $this->registrarHistorial($proyectoId, 'Subida de documento', $detalle);
             $db->commit();
 
             $inv = (new Proyecto())->involucrados($proyectoId);

@@ -33,6 +33,31 @@ class Documento extends Model
         return (int) $stmt->fetchColumn();
     }
 
+    /**
+     * Versión a usar al subir un documento de etapa.
+     *
+     * Si el último documento aún NO fue revisado por el tutor (estado enviado o
+     * en_revision) se reutiliza su versión (se reemplaza). Si ya pasó por
+     * revisión/observaciones (con_observaciones, en_correccion, aprobado, final)
+     * se genera la siguiente versión.
+     *
+     * @return array{version:int, documento_id:?int} documento_id != null indica reemplazo
+     */
+    public function versionParaSubida(int $proyectoId, int $etapaId, string $tipo = 'trabajo'): array
+    {
+        $actual = $this->actualDeEtapa($proyectoId, $etapaId, $tipo);
+        if (!$actual) {
+            return ['version' => 1, 'documento_id' => null];
+        }
+
+        $sinRevisar = in_array($actual['estado'], ['enviado', 'en_revision'], true);
+        if ($sinRevisar) {
+            return ['version' => (int) $actual['version'], 'documento_id' => (int) $actual['id']];
+        }
+
+        return ['version' => (int) $actual['version'] + 1, 'documento_id' => null];
+    }
+
     /** Documento con sus observaciones (hilo completo) */
     public function conObservaciones(int $id): ?array
     {
