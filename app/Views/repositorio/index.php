@@ -91,7 +91,7 @@ $rol = Auth::role();
 
 <?php if ($rol !== 'admin'): ?>
 <div class="mb-4 text-xs text-gray-500">
-    Solo ves los archivos <?= $rol === 'docente' ? 'de tus tutorías' : 'de tus proyectos' ?>.
+    Ves tus archivos<?= $rol === 'docente' ? ' (tutorías)' : '' ?> y las <strong>tesis públicas</strong> de proyectos finalizados (solo PDF, para referencia).
 </div>
 <?php endif; ?>
 
@@ -122,6 +122,7 @@ $rol = Auth::role();
                             <p class="font-medium text-gray-900"><?= e($a['titulo']) ?>
                                 <?php if ((int) $a['version'] > 1): ?><span class="text-[11px] text-gray-400">v<?= (int) $a['version'] ?></span><?php endif; ?>
                                 <?php if ($a['estado'] === 'reemplazado'): ?><span class="text-[11px] text-amber-600">(reemplazado)</span><?php endif; ?>
+                                <?php if (($a['acceso'] ?? '') === 'publico'): ?><span class="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">📖 Tesis pública</span><?php endif; ?>
                             </p>
                             <p class="text-xs text-gray-400"><?= e($a['nombre_original']) ?></p>
                         </div>

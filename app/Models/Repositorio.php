@@ -45,17 +45,27 @@ class Repositorio extends Model
         $sql .= ' AND r.estado IN (' . implode(',', $estados) . ')';
 
         // Alcance por rol
-        if ($rol === 'estudiante') {
-            $sql .= " AND r.estudiante_id IN (SELECT id FROM estudiantes WHERE usuario_id = ?)";
+        if ($rol === 'admin') {
+            // ve todo
+        } elseif ($rol === 'estudiante') {
+            // Suyos + tesis públicas de proyectos finalizados (solo PDF sellado)
+            $sql .= " AND (r.estudiante_id IN (SELECT id FROM estudiantes WHERE usuario_id = ?)
+                           OR (r.tipo = 'documento_final' AND r.formato = 'pdf' AND r.estado = 'activo' AND
+                               EXISTS (SELECT 1 FROM proyectos p2 WHERE p2.id = r.proyecto_id
+                                       AND p2.estado IN ('aprobado', 'finalizado'))))";
             $params[] = $usuarioId;
         } elseif ($rol === 'docente') {
-            $sql .= " AND (r.id IN (
+            // Sus tutorías + lo que subió + tesis públicas de proyectos finalizados (solo PDF sellado)
+            $sql .= " AND ((r.id IN (
                         SELECT r2.id FROM repositorio r2
                         INNER JOIN proyectos p2 ON p2.id = r2.proyecto_id
                         INNER JOIN asignaciones a ON a.proyecto_id = p2.id AND a.estado = 'activa'
                         INNER JOIN docentes d ON d.id = a.docente_id
                         WHERE d.usuario_id = ?
-                     ) OR r.subido_por = ?)";
+                      ) OR r.subido_por = ?)
+                      OR (r.tipo = 'documento_final' AND r.formato = 'pdf' AND r.estado = 'activo' AND
+                          EXISTS (SELECT 1 FROM proyectos p3 WHERE p3.id = r.proyecto_id
+                                  AND p3.estado IN ('aprobado', 'finalizado'))))";
             $params[] = $usuarioId;
             $params[] = $usuarioId;
         }
@@ -94,7 +104,39 @@ class Repositorio extends Model
 
         $sql .= " ORDER BY r.creado_en DESC, r.id DESC LIMIT 500";
 
-        return $this->query($sql, $params);
+        $rows = $this->query($sql, $params);
+
+        // Etiquetar el tipo de acceso de cada fila para la vista
+        $miEstudianteId = 0;
+        $misTutorias = [];
+        if ($rol === 'estudiante') {
+            $s = $this->db->prepare("SELECT id FROM estudiantes WHERE usuario_id = ? LIMIT 1");
+            $s->execute([$usuarioId]);
+            $miEstudianteId = (int) $s->fetchColumn();
+        } elseif ($rol === 'docente') {
+            $s = $this->db->prepare(
+                "SELECT p.id FROM proyectos p
+                 INNER JOIN asignaciones a ON a.proyecto_id = p.id AND a.estado = 'activa'
+                 INNER JOIN docentes d ON d.id = a.docente_id
+                 WHERE d.usuario_id = ?"
+            );
+            $s->execute([$usuarioId]);
+            $misTutorias = array_map('intval', $s->fetchAll(\PDO::FETCH_COLUMN));
+        }
+
+        foreach ($rows as &$fila) {
+            if ($rol === 'admin') {
+                $fila['acceso'] = 'admin';
+            } elseif ($rol === 'estudiante') {
+                $fila['acceso'] = ((int) $fila['estudiante_id'] === $miEstudianteId) ? 'propio' : 'publico';
+            } else {
+                $fila['acceso'] = (in_array((int) $fila['proyecto_id'], $misTutorias, true)
+                    || (int) $fila['subido_por'] === $usuarioId) ? 'tutoria' : 'publico';
+            }
+        }
+        unset($fila);
+
+        return $rows;
     }
 
     /** Detalle de un archivo del repositorio con datos del estudiante/proyecto */
@@ -125,32 +167,48 @@ class Repositorio extends Model
         if ($rol === 'admin') {
             return true;
         }
+
         if ($rol === 'estudiante') {
-            if (!$archivo['estudiante_id']) {
-                return false;
+            // Dueño del archivo
+            if (!empty($archivo['estudiante_id'])) {
+                $stmt = $this->db->prepare(
+                    "SELECT id FROM estudiantes WHERE id = ? AND usuario_id = ? LIMIT 1"
+                );
+                $stmt->execute([(int) $archivo['estudiante_id'], $usuarioId]);
+                if ((bool) $stmt->fetchColumn()) {
+                    return true;
+                }
             }
-            $stmt = $this->db->prepare(
-                "SELECT id FROM estudiantes WHERE id = ? AND usuario_id = ? LIMIT 1"
-            );
-            $stmt->execute([(int) $archivo['estudiante_id'], $usuarioId]);
-            return (bool) $stmt->fetchColumn();
-        }
-        if ($rol === 'docente') {
-            // Tutor del proyecto asociado o quien subió el archivo
+            // Si no es suyo, cae al chequeo de acceso público
+        } elseif ($rol === 'docente') {
+            // Quien subió el archivo
             if ((int) $archivo['subido_por'] === $usuarioId) {
                 return true;
             }
-            if (!$archivo['proyecto_id']) {
-                return false;
+            // Tutor del proyecto asociado
+            if (!empty($archivo['proyecto_id'])) {
+                $stmt = $this->db->prepare(
+                    "SELECT COUNT(*) FROM asignaciones a
+                     INNER JOIN docentes d ON d.id = a.docente_id
+                     WHERE a.proyecto_id = ? AND a.estado = 'activa' AND d.usuario_id = ?"
+                );
+                $stmt->execute([(int) $archivo['proyecto_id'], $usuarioId]);
+                if ((int) $stmt->fetchColumn() > 0) {
+                    return true;
+                }
             }
-            $stmt = $this->db->prepare(
-                "SELECT COUNT(*) FROM asignaciones a
-                 INNER JOIN docentes d ON d.id = a.docente_id
-                 WHERE a.proyecto_id = ? AND a.estado = 'activa' AND d.usuario_id = ?"
-            );
-            $stmt->execute([(int) $archivo['proyecto_id'], $usuarioId]);
-            return (int) $stmt->fetchColumn() > 0;
         }
+
+        // Acceso público interno: solo el PDF sellado (documento_final) de proyectos finalizados
+        if (($archivo['tipo'] ?? '') === 'documento_final'
+            && mb_strtolower((string) ($archivo['formato'] ?? '')) === 'pdf') {
+            $stmt = $this->db->prepare(
+                "SELECT 1 FROM proyectos WHERE id = ? AND estado IN ('aprobado', 'finalizado') LIMIT 1"
+            );
+            $stmt->execute([(int) $archivo['proyecto_id']]);
+            return (bool) $stmt->fetchColumn();
+        }
+
         return false;
     }
 
