@@ -169,6 +169,7 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
                 function abrirModal(texto, pages) {
                     texto = (texto || '').replace(/\s+/g, ' ').trim();
                     if (texto.length < 2) { return; }
+                    if (seleccion && seleccion.texto === texto && modal.style.display !== 'none') { return; }
                     seleccion = { texto: texto, pages: pages || [] };
                     mTexto.textContent = texto;
                     mComentario.value = '';

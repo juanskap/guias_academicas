@@ -469,9 +469,18 @@ class DocumentoController extends Controller
 
             window.parent.postMessage({ type: 'sigep-selection', text: texto, pages: pages }, '*');
         }
+        document.addEventListener('mouseup', function () {
+            clearTimeout(temporizador);
+            temporizador = setTimeout(avisar, 150);
+        });
+        document.addEventListener('keyup', function () {
+            clearTimeout(temporizador);
+            temporizador = setTimeout(avisar, 150);
+        });
+        // Respaldo: si la selección se hizo con teclado o el mouse se soltó fuera del iframe
         document.addEventListener('selectionchange', function () {
             clearTimeout(temporizador);
-            temporizador = setTimeout(avisar, 250);
+            temporizador = setTimeout(avisar, 800);
         });
 
         window.addEventListener('message', function (ev) {
