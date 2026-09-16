@@ -131,7 +131,8 @@ $rol = Auth::role();
                 <td class="px-4 py-3">
                     <p class="text-gray-900"><?= e($a['estudiante_nombre'] ?? '—') ?><?= $rol === 'admin' ? '' : '' ?></p>
                     <p class="text-xs text-gray-400">
-                        <?= $a['cedula'] ? 'C.C. ' . e($a['cedula']) : '' ?><?= $a['cedula'] && $a['carrera'] ? ' · ' : '' ?><?= e($a['carrera'] ?? '') ?>
+                        <?php $mostrarCedula = !empty($a['cedula']) && ($a['acceso'] ?? '') !== 'publico'; ?>
+                        <?= $mostrarCedula ? 'C.C. ' . e($a['cedula']) : '' ?><?= $mostrarCedula && !empty($a['carrera']) ? ' · ' : '' ?><?= e($a['carrera'] ?? '') ?>
                     </p>
                 </td>
                 <td class="px-4 py-3">
