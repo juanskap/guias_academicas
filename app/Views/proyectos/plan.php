@@ -29,7 +29,7 @@ $rol = Auth::role();
             <?= csrf_field() ?>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Descripción *</label>
-                <input type="text" name="descripcion" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="text" name="descripcion" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0b6f9e] outline-none">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
@@ -70,7 +70,7 @@ $rol = Auth::role();
                     <input type="date" name="fecha_limite" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">Registrar actividad</button>
+            <button type="submit" class="w-full bg-[#005880] hover:bg-[#004764] text-white font-semibold py-2 rounded-lg transition">Registrar actividad</button>
         </form>
     </div>
 
@@ -81,7 +81,7 @@ $rol = Auth::role();
             <?= csrf_field() ?>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Descripción *</label>
-                <input type="text" name="descripcion" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                <input type="text" name="descripcion" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0b6f9e] outline-none">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Actividad asociada (opcional)</label>
@@ -102,7 +102,7 @@ $rol = Auth::role();
                     <input type="date" name="fecha_limite" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                 </div>
             </div>
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-lg transition">Registrar plazo</button>
+            <button type="submit" class="w-full bg-[#0B803A] hover:bg-[#0a6b31] text-white font-semibold py-2 rounded-lg transition">Registrar plazo</button>
         </form>
     </div>
 </div>

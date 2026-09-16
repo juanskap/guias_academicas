@@ -134,10 +134,22 @@ class ProyectoController extends Controller
 
         $etapas = (new Proyecto())->etapasConEstado($id, (int) $proyecto['tipo_proyecto_id']);
 
+        $historial = Database::getConnection()->prepare(
+            "SELECT h.*, u.nombres, u.apellidos
+             FROM historial_acciones h
+             INNER JOIN usuarios u ON u.id = h.usuario_id
+             WHERE h.proyecto_id = ?
+             ORDER BY h.creado_en DESC
+             LIMIT 25"
+        );
+        $historial->execute([$id]);
+        $historial = $historial->fetchAll();
+
         $this->view('proyectos/ver', [
             'title' => $proyecto['codigo'],
             'proyecto' => $proyecto,
             'etapas' => $etapas,
+            'historial' => $historial,
         ]);
     }
 

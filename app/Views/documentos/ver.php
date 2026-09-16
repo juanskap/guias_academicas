@@ -16,9 +16,9 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
             <p class="text-gray-500"><?= e($proyecto['nombre']) ?> · Etapa: <?= e($etapa['nombre'] ?? '—') ?></p>
         </div>
         <div class="flex gap-2">
-            <a href="<?= url('documentos/descargar/' . $documento['id']) ?>" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition">⬇ Descargar</a>
+            <a href="<?= url('documentos/descargar/' . $documento['id']) ?>" class="px-4 py-2 bg-[#005880] hover:bg-[#004764] text-white text-sm font-semibold rounded-lg transition">⬇ Descargar</a>
             <?php if ($esTrabajo && $rol === 'estudiante'): ?>
-            <a href="#subir" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition">⬆ Nueva versión</a>
+            <a href="#subir" class="px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition">⬆ Nueva versión</a>
             <?php endif; ?>
             <?php if ($esTrabajo && in_array($rol, ['admin', 'docente'], true)): ?>
             <form method="post" action="<?= url('documentos/aprobar/' . $documento['id']) ?>">
@@ -58,7 +58,7 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
         <input type="hidden" name="proyecto_id" value="<?= (int) $documento['proyecto_id'] ?>">
         <input type="hidden" name="etapa_id" value="<?= (int) $documento['etapa_id'] ?>">
         <input type="file" name="documento" accept=".pdf,.doc,.docx,.txt,.odt" required class="text-sm">
-        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition">Subir v<?= (int) $documento['version'] + 1 ?></button>
+        <button type="submit" class="px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition">Subir v<?= (int) $documento['version'] + 1 ?></button>
     </form>
     <p class="text-xs text-gray-400 mt-2">Permitidos: <?= e(implode(', ', ALLOWED_EXTENSIONS)) ?> · máx. 10 MB · se conserva solo la versión actual.</p>
 </div>
@@ -69,7 +69,7 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
     <div class="lg:col-span-3 bg-white rounded-xl shadow p-5">
         <div class="flex items-center justify-between mb-3">
             <h2 class="font-semibold text-gray-900">Vista previa</h2>
-            <a href="<?= url('documentos/descargar/' . $documento['id']) ?>" class="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">⬇ Descargar</a>
+            <a href="<?= url('documentos/descargar/' . $documento['id']) ?>" class="text-xs px-3 py-1.5 bg-[#005880] hover:bg-[#004764] text-white rounded-lg">⬇ Descargar</a>
         </div>
         <?php
         $ext = strtolower(pathinfo($documento['ruta'], PATHINFO_EXTENSION));
@@ -116,7 +116,7 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
                 <div class="mt-3 ml-4 space-y-2 border-l-2 border-gray-100 pl-4">
                     <?php foreach ($obs['respuestas'] as $r): ?>
                     <div class="text-sm">
-                        <span class="text-xs font-semibold uppercase bg-indigo-50 px-2 py-0.5 rounded-full text-indigo-600 mr-2"><?= e($r['rol']) ?></span>
+                        <span class="text-xs font-semibold uppercase bg-[#e8f4fa] px-2 py-0.5 rounded-full text-[#005880] mr-2"><?= e($r['rol']) ?></span>
                         <span class="font-medium"><?= e($r['nombres']) ?> <?= e($r['apellidos']) ?></span>
                         <span class="text-xs text-gray-400 ml-1"><?= e(format_date($r['creado_en'])) ?></span>
                         <p class="text-gray-700 mt-1"><?= nl2br(e($r['mensaje'])) ?></p>
@@ -137,8 +137,8 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
                 <form method="post" action="<?= url('documentos/responder') ?>" class="mt-3">
                     <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
                     <input type="hidden" name="observacion_id" value="<?= (int) $obs['id'] ?>">
-                    <textarea name="mensaje" rows="2" placeholder="Escribe una respuesta..." required class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                    <button type="submit" class="mt-1 text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">Responder</button>
+                    <textarea name="mensaje" rows="2" placeholder="Escribe una respuesta..." required class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b6f9e]"></textarea>
+                    <button type="submit" class="mt-1 text-xs px-3 py-1.5 bg-[#005880] hover:bg-[#004764] text-white rounded-lg">Responder</button>
                 </form>
             </div>
             <?php endforeach; ?>
@@ -154,9 +154,9 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
                 <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
                 <input type="hidden" name="documento_id" value="<?= (int) $documento['id'] ?>">
                 <label class="block text-sm text-gray-600 mb-1">Texto del documento (referencia)</label>
-                <textarea name="texto_seleccionado" rows="3" placeholder="Copia aquí el fragmento del documento que quieres señalar (opcional)" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <textarea name="texto_seleccionado" rows="3" placeholder="Copia aquí el fragmento del documento que quieres señalar (opcional)" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b6f9e]"></textarea>
                 <label class="block text-sm text-gray-600 mb-1 mt-3">Comentario</label>
-                <textarea name="comentario" rows="3" placeholder="Describe la observación..." required class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                <textarea name="comentario" rows="3" placeholder="Describe la observación..." required class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b6f9e]"></textarea>
                 <button type="submit" class="mt-3 w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition">Registrar observación</button>
             </form>
         </div>

@@ -28,7 +28,7 @@ $nuevaVersion = $docActual ? (int) $docActual['version'] + 1 : 1;
             <input type="file" name="documento" accept=".pdf,.doc,.docx,.txt,.odt" required class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
             <p class="text-xs text-gray-400 mt-1 mb-4">Permitidos: <?= e(implode(', ', ALLOWED_EXTENSIONS)) ?> · máximo 10 MB</p>
 
-            <button type="submit" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition">Subir documento</button>
+            <button type="submit" class="w-full px-4 py-2 bg-[#005880] hover:bg-[#004764] text-white text-sm font-semibold rounded-lg transition">Subir documento</button>
         </form>
     </div>
 </div>

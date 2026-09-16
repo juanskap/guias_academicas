@@ -11,7 +11,7 @@
     <?php if ($noLeidas > 0): ?>
     <form method="post" action="<?= url('notificaciones/marcar-todas') ?>">
         <?= csrf_field() ?>
-        <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition">Marcar todas como leídas</button>
+        <button class="px-4 py-2 bg-[#005880] hover:bg-[#004764] text-white text-sm font-semibold rounded-lg transition">Marcar todas como leídas</button>
     </form>
     <?php endif; ?>
 </div>
@@ -21,14 +21,14 @@
 <?php else: ?>
 <ol class="space-y-3">
     <?php foreach ($notificaciones as $n): ?>
-    <li class="bg-white rounded-xl shadow p-4 flex items-start gap-4 <?= $n['leida'] ? 'opacity-75' : 'border-l-4 border-indigo-500' ?>">
+    <li class="bg-white rounded-xl shadow p-4 flex items-start gap-4 <?= $n['leida'] ? 'opacity-75' : 'border-l-4 border-[#0b6f9e]' ?>">
         <div class="flex-1">
             <p class="font-medium text-sm"><?= e($n['titulo']) ?></p>
             <p class="text-sm text-gray-600 mt-0.5"><?= e($n['mensaje']) ?></p>
             <p class="text-xs text-gray-400 mt-1">
                 <?= e(format_date($n['creado_en'])) ?>
                 <?php if ($n['codigo']): ?>
-                · <a href="<?= url('proyectos/ver/' . $n['proyecto_id']) ?>" class="text-indigo-600 hover:underline"><?= e($n['codigo']) ?></a>
+                · <a href="<?= url('proyectos/ver/' . $n['proyecto_id']) ?>" class="text-[#005880] hover:underline"><?= e($n['codigo']) ?></a>
                 <?php endif; ?>
             </p>
         </div>

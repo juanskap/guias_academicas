@@ -8,7 +8,7 @@ use App\Core\Request;
         <h1 class="text-2xl font-bold text-gray-900">Tipos de proyecto</h1>
         <p class="text-gray-500 text-sm">Configura los tipos de proyecto y sus etapas</p>
     </div>
-    <a href="<?= url('tipos-proyecto/nuevo') ?>" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Nuevo tipo</a>
+    <a href="<?= url('tipos-proyecto/nuevo') ?>" class="bg-[#005880] hover:bg-[#004764] text-white text-sm font-semibold px-4 py-2 rounded-lg transition">+ Nuevo tipo</a>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -23,8 +23,8 @@ use App\Core\Request;
         <p class="text-sm text-gray-500 mb-3 flex-1"><?= e($t['descripcion'] ?? 'Sin descripción') ?></p>
         <p class="text-sm mb-3"><span class="font-semibold"><?= (int) $t['total_etapas'] ?></span> etapas configuradas</p>
         <div class="flex items-center gap-3 text-sm border-t pt-3">
-            <a href="<?= url('tipos-proyecto/etapas/' . $t['id']) ?>" class="text-indigo-600 hover:text-indigo-800 font-medium">Etapas</a>
-            <a href="<?= url('tipos-proyecto/editar/' . $t['id']) ?>" class="text-indigo-600 hover:text-indigo-800 font-medium">Editar</a>
+            <a href="<?= url('tipos-proyecto/etapas/' . $t['id']) ?>" class="text-[#005880] hover:text-[#00394f] font-medium">Etapas</a>
+            <a href="<?= url('tipos-proyecto/editar/' . $t['id']) ?>" class="text-[#005880] hover:text-[#00394f] font-medium">Editar</a>
             <form method="post" action="<?= url('tipos-proyecto/estado/' . $t['id']) ?>" class="inline ml-auto" data-confirm="¿Cambiar el estado de este tipo de proyecto?">
                 <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
                 <button type="submit" class="font-medium <?= $t['activo'] ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' ?>">

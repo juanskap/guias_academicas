@@ -14,9 +14,9 @@ use App\Core\Request;
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nueva contraseña</label>
                 <input type="password" name="password" required minlength="6"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0b6f9e] outline-none">
             </div>
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2 rounded-lg transition">Guardar contraseña</button>
+            <button type="submit" class="w-full bg-[#005880] hover:bg-[#004764] text-white font-semibold px-5 py-2 rounded-lg transition">Guardar contraseña</button>
         </form>
     </div>
 </div>
