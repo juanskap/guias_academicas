@@ -167,6 +167,7 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
             <form method="post" action="<?= url('documentos/observar') ?>">
                 <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
                 <input type="hidden" name="documento_id" value="<?= (int) $documento['id'] ?>">
+                <input type="hidden" id="refGeo" name="anotacion" value="">
                 <div class="flex items-center justify-between mb-1">
                     <label class="block text-sm text-gray-600">Texto del documento (referencia)</label>
                     <span id="refStatus" class="text-[11px] font-semibold text-green-600" hidden>✓ texto marcado</span>
@@ -181,27 +182,32 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
         <script>
             (function () {
                 var ref = document.getElementById('refTexto');
+                var geo = document.getElementById('refGeo');
                 var estado = document.getElementById('refStatus');
                 var limpiar = document.getElementById('refLimpiar');
                 var frame = document.getElementById('previewFrame');
                 if (!ref) { return; }
 
-                function marcar(texto) {
+                function marcar(texto, pages) {
                     texto = (texto || '').replace(/\s+/g, ' ').trim();
                     if (texto.length < 2) { return; }
                     ref.value = texto;
+                    if (geo && pages && pages.length) {
+                        geo.value = JSON.stringify({ pages: pages, color: 'amarillo' });
+                    }
                     estado.hidden = false;
                     limpiar.hidden = false;
                 }
 
                 limpiar.addEventListener('click', function () {
                     ref.value = '';
+                    if (geo) { geo.value = ''; }
                     estado.hidden = true;
                     limpiar.hidden = true;
                 });
 
                 window.addEventListener('message', function (ev) {
-                    if (ev.data && ev.data.type === 'sigep-selection') { marcar(ev.data.text); }
+                    if (ev.data && ev.data.type === 'sigep-selection') { marcar(ev.data.text, ev.data.pages); }
                 });
 
                 if (frame && new URL(frame.src, location.href).origin === location.origin) {

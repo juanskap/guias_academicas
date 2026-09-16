@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Request;
 use App\Middlewares\AuthMiddleware;
+use App\Models\Anotacion;
 use App\Models\Documento;
 use App\Models\Etapa;
 use App\Models\Notificacion;
@@ -311,6 +312,7 @@ class DocumentoController extends Controller
         }
 
         $pdfUrl = url('documentos/previsualizar/' . $id);
+        $anotUrl = url('documentos/anotaciones/' . $id);
         $pdfJs  = asset('vendor/pdfjs/pdf.min.js');
         $worker = asset('vendor/pdfjs/pdf.worker.min.js');
 
@@ -327,9 +329,10 @@ class DocumentoController extends Controller
     #viewer { padding: 12px 0; }
     .page { position: relative; margin: 0 auto 12px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
     .page canvas { display: block; }
-    .textLayer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; line-height: 1; }
+    .textLayer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; line-height: 1; z-index: 2; }
     .textLayer > span { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
     .textLayer ::selection { background: rgba(0,110,255,.35); }
+    .resaltado { position: absolute; background: rgba(255,214,10,.55); mix-blend-mode: multiply; pointer-events: none; z-index: 1; border-radius: 2px; }
     #msg { color: #fff; font: 14px/1.6 Arial, sans-serif; padding: 24px; text-align: center; }
 </style>
 </head>
@@ -340,9 +343,11 @@ class DocumentoController extends Controller
 <script>
     (function () {
         var PDF_URL = "{$pdfUrl}";
+        var ANOT_URL = "{$anotUrl}";
         pdfjsLib.GlobalWorkerOptions.workerSrc = "{$worker}";
         var contenedor = document.getElementById('viewer');
         var msg = document.getElementById('msg');
+        var paginas = [];
 
         pdfjsLib.getDocument({ url: PDF_URL, disableRange: true, disableStream: true }).promise.then(function (pdf) {
             var cadena = Promise.resolve();
@@ -351,6 +356,7 @@ class DocumentoController extends Controller
                     cadena = cadena.then(function () { return pintarPagina(pdf, num); });
                 })(n);
             }
+            cadena.then(pintarAnotaciones);
         }).catch(function () {
             msg.hidden = false;
             msg.textContent = 'No se pudo mostrar la vista previa. Descarga el documento para revisarlo.';
@@ -378,6 +384,7 @@ class DocumentoController extends Controller
                 textLayer.className = 'textLayer';
                 pageDiv.appendChild(textLayer);
                 contenedor.appendChild(pageDiv);
+                paginas[num - 1] = pageDiv;
 
                 var tarea = page.render({
                     canvasContext: canvas.getContext('2d'),
@@ -398,13 +405,67 @@ class DocumentoController extends Controller
             });
         }
 
+        function pintarAnotaciones() {
+            return fetch(ANOT_URL, { credentials: 'same-origin' }).then(function (r) {
+                return r.ok ? r.json() : null;
+            }).then(function (res) {
+                if (!res || !res.anotaciones) { return; }
+                res.anotaciones.forEach(function (a) {
+                    var el = paginas[a.pagina];
+                    if (!el) { return; }
+                    var W = el.clientWidth, H = el.clientHeight;
+                    (a.rects || []).forEach(function (r) {
+                        var d = document.createElement('div');
+                        d.className = 'resaltado';
+                        if (a.texto) { d.title = a.texto; }
+                        d.style.left = (r.x * W) + 'px';
+                        d.style.top = (r.y * H) + 'px';
+                        d.style.width = (r.w * W) + 'px';
+                        d.style.height = (r.h * H) + 'px';
+                        el.appendChild(d);
+                    });
+                });
+            }).catch(function () {});
+        }
+
         var temporizador;
         function avisar() {
             var sel = window.getSelection();
             var texto = sel ? sel.toString().replace(/\s+/g, ' ').trim() : '';
-            if (texto.length >= 2) {
-                window.parent.postMessage({ type: 'sigep-selection', text: texto }, '*');
+            if (!sel || sel.rangeCount === 0 || texto.length < 2) { return; }
+
+            var rects = sel.getRangeAt(0).getClientRects();
+            var mapa = {};
+            for (var i = 0; i < rects.length; i++) {
+                var rc = rects[i];
+                if (rc.width < 1 || rc.height < 1) { continue; }
+                var cx = rc.left + rc.width / 2;
+                var cy = rc.top + rc.height / 2;
+                for (var p = 0; p < paginas.length; p++) {
+                    var el = paginas[p];
+                    if (!el) { continue; }
+                    var pr = el.getBoundingClientRect();
+                    if (cx >= pr.left - 1 && cx <= pr.right + 1 && cy >= pr.top - 1 && cy <= pr.bottom + 1) {
+                        (mapa[p] = mapa[p] || []).push({
+                            x: (rc.left - pr.left) / pr.width,
+                            y: (rc.top - pr.top) / pr.height,
+                            w: rc.width / pr.width,
+                            h: rc.height / pr.height
+                        });
+                        break;
+                    }
+                }
             }
+
+            var pages = [];
+            for (var k in mapa) {
+                if (mapa[k].length) {
+                    pages.push({ page: parseInt(k, 10), rects: mapa[k].slice(0, 120) });
+                }
+            }
+            if (!pages.length) { return; }
+
+            window.parent.postMessage({ type: 'sigep-selection', text: texto, pages: pages }, '*');
         }
         document.addEventListener('selectionchange', function () {
             clearTimeout(temporizador);
@@ -415,6 +476,29 @@ class DocumentoController extends Controller
 </body>
 </html>
 HTML;
+        exit;
+    }
+
+    /** Resaltados (JSON) del documento para pintarlos en la vista previa */
+    public function anotaciones(int $id): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+
+        $doc = (new Documento())->find($id);
+        if (!$doc) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Documento no encontrado']);
+            exit;
+        }
+
+        $proyecto = (new Proyecto())->detail((int) $doc['proyecto_id']);
+        if (!$proyecto || !$this->canAccess($proyecto)) {
+            http_response_code(403);
+            echo json_encode(['error' => 'Acceso denegado']);
+            exit;
+        }
+
+        echo json_encode(['anotaciones' => (new Anotacion())->porDocumento($id)]);
         exit;
     }
 
@@ -506,6 +590,10 @@ HTML;
              VALUES (?, ?, ?, ?, ?, 'pendiente')",
             [$doc['id'], $doc['proyecto_id'], Auth::id(), $textoSeleccionado ?: null, $comentario]
         );
+
+        // Resaltado(s) amarillo(s) marcados en la vista previa
+        $obsId = (new Documento())->lastInsertId();
+        $this->guardarAnotaciones((int) $doc['id'], $obsId, $textoSeleccionado ?: null, (string) Request::post('anotacion', ''));
 
         // El documento pasa a 'con_observaciones'
         (new Documento())->update((int) $doc['id'], ['estado' => 'con_observaciones']);
@@ -718,6 +806,60 @@ HTML;
         $stmt->execute([$tipoProyectoId, $etapaActualId]);
         $id = $stmt->fetchColumn();
         return $id ? (int) $id : null;
+    }
+
+    /** Valida y guarda los resaltados enviados desde la vista previa */
+    private function guardarAnotaciones(int $documentoId, int $observacionId, ?string $texto, string $raw): void
+    {
+        if ($raw === '') {
+            return;
+        }
+
+        $data = json_decode($raw, true);
+        if (!is_array($data) || !isset($data['pages']) || !is_array($data['pages'])) {
+            return;
+        }
+
+        $color = in_array(($data['color'] ?? ''), ['amarillo', 'verde', 'rojo', 'azul'], true) ? $data['color'] : 'amarillo';
+        $modelo = new Anotacion();
+        $paginas = 0;
+
+        foreach ($data['pages'] as $p) {
+            if ($paginas >= 100) {
+                break;
+            }
+            $pagina = isset($p['page']) ? (int) $p['page'] : -1;
+            if ($pagina < 0 || $pagina > 10000) {
+                continue;
+            }
+
+            $rects = [];
+            if (isset($p['rects']) && is_array($p['rects'])) {
+                foreach ($p['rects'] as $r) {
+                    if (count($rects) >= 120 || !is_array($r)) {
+                        break;
+                    }
+                    $x = (float) ($r['x'] ?? -1);
+                    $y = (float) ($r['y'] ?? -1);
+                    $w = (float) ($r['w'] ?? 0);
+                    $h = (float) ($r['h'] ?? 0);
+                    if ($x < -0.5 || $x > 1.5 || $y < -0.5 || $y > 1.5) {
+                        continue;
+                    }
+                    if ($w <= 0 || $w > 1.5 || $h <= 0 || $h > 1.5) {
+                        continue;
+                    }
+                    $rects[] = ['x' => $x, 'y' => $y, 'w' => $w, 'h' => $h];
+                }
+            }
+
+            if (!$rects) {
+                continue;
+            }
+
+            $modelo->guardar($documentoId, $observacionId, Auth::id(), $pagina, $rects, $texto ?: null, $color);
+            $paginas++;
+        }
     }
 
     private function validarArchivo(?array $file): ?string
