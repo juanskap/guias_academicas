@@ -115,6 +115,19 @@ $rol = Auth::role();
             <?php endif; ?>
         </div>
 
+        <?php if (!empty($consolidadoCompleto) || !empty($consolidadoGenerado)): ?>
+        <div class="bg-white rounded-xl shadow p-5 border-l-4 border-[#005880]">
+            <h2 class="font-semibold text-gray-900 mb-1">📚 Documento unificado</h2>
+            <?php if (!empty($consolidadoGenerado)): ?>
+                <p class="text-sm text-gray-500 mb-3">Los documentos finales (PDF y Word) ya fueron generados.</p>
+                <a href="<?= url('consolidado/ver/' . $proyecto['id']) ?>" class="inline-block px-4 py-2 bg-[#005880] hover:bg-[#004764] text-white text-sm font-semibold rounded-lg transition">Ver documentos unificados</a>
+            <?php else: ?>
+                <p class="text-sm text-gray-500 mb-3">El proyecto está al 100%. Genera el documento unificado (Perfil y Proyecto, en PDF y Word).</p>
+                <a href="<?= url('consolidado/ver/' . $proyecto['id']) ?>" class="inline-block px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition">Generar documento unificado</a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
         <div class="bg-white rounded-xl shadow p-5">
             <h2 class="font-semibold text-gray-900 mb-3">🕓 Historial de actividades</h2>
             <?php if (!$historial): ?>

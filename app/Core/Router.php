@@ -18,6 +18,7 @@ class Router
         'usuarios'        => 'UsuarioController',
         'tipos-proyecto'  => 'TipoProyectoController',
         'configuracion'   => 'ConfiguracionController',
+        'consolidado'     => 'ConsolidadoController',
         'mis-proyectos'   => 'ProyectoController',
         'proyectos'       => 'ProyectoController',
         'documentos'      => 'DocumentoController',

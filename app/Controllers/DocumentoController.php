@@ -490,6 +490,15 @@ class DocumentoController extends Controller
             $this->registrarHistorial((int) $doc['proyecto_id'], 'Aprobación de etapa', "Etapa aprobada y documento final archivado");
             $db->commit();
 
+            // Al alcanzar el 100%, generar automáticamente el documento unificado
+            if ($avance >= 100) {
+                try {
+                    (new \App\Helpers\Consolidado())->generar((int) $doc['proyecto_id']);
+                } catch (\Throwable $e) {
+                    error_log('Consolidado automático falló (proyecto ' . $doc['proyecto_id'] . '): ' . $e->getMessage());
+                }
+            }
+
             $inv = (new Proyecto())->involucrados((int) $doc['proyecto_id']);
             notificar([$inv['estudiante_usuario_id']], 'Etapa aprobada', "La etapa fue aprobada y su documento final se archivó. Avance: {$avance}%.", (int) $doc['proyecto_id'], 'aprobacion', Auth::id());
 

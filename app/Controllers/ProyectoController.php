@@ -150,6 +150,8 @@ class ProyectoController extends Controller
             'proyecto' => $proyecto,
             'etapas' => $etapas,
             'historial' => $historial,
+            'consolidadoCompleto' => (float) $proyecto['porcentaje_avance'] >= 100,
+            'consolidadoGenerado' => (new \App\Helpers\Consolidado())->generados($id),
         ]);
     }
 
