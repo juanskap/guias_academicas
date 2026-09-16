@@ -79,9 +79,13 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
         </div>
         <?php
         $ext = strtolower(pathinfo($documento['ruta'], PATHINFO_EXTENSION));
+        $conVisor = in_array($ext, ['pdf', 'docx', 'odt', 'doc', 'rtf'], true);
         if (in_array($ext, ['pdf', 'txt', 'docx', 'odt', 'doc', 'rtf'], true)):
         ?>
-        <iframe src="<?= url('documentos/previsualizar/' . $documento['id']) ?>" class="w-full h-[600px] border border-gray-200 rounded-lg bg-gray-50" title="Vista previa del documento"></iframe>
+        <iframe id="previewFrame" src="<?= url('documentos/' . ($conVisor ? 'visor' : 'previsualizar') . '/' . $documento['id']) ?>" class="w-full h-[600px] border border-gray-200 rounded-lg bg-gray-50" title="Vista previa del documento"></iframe>
+        <?php if (in_array($rol, ['admin', 'docente'], true) && $esTrabajo): ?>
+        <p class="text-xs text-gray-500 mt-2">🖱️ <strong>Marca el texto</strong> que quieres señalar: al seleccionarlo, aparecerá automáticamente en “Texto del documento” de la nueva observación.</p>
+        <?php endif; ?>
         <?php else: ?>
         <div class="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-8 text-center text-sm text-gray-500">
             No se puede previsualizar este formato (<?= e(strtoupper($ext)) ?>).<br>
@@ -163,13 +167,61 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
             <form method="post" action="<?= url('documentos/observar') ?>">
                 <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
                 <input type="hidden" name="documento_id" value="<?= (int) $documento['id'] ?>">
-                <label class="block text-sm text-gray-600 mb-1">Texto del documento (referencia)</label>
-                <textarea name="texto_seleccionado" rows="3" placeholder="Copia aquí el fragmento del documento que quieres señalar (opcional)" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b6f9e]"></textarea>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-sm text-gray-600">Texto del documento (referencia)</label>
+                    <span id="refStatus" class="text-[11px] font-semibold text-green-600" hidden>✓ texto marcado</span>
+                </div>
+                <textarea id="refTexto" name="texto_seleccionado" rows="3" placeholder="Selecciona el texto en la vista previa de arriba (se rellena solo) o escríbelo aquí (opcional)" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b6f9e]"></textarea>
+                <button type="button" id="refLimpiar" class="mt-1 text-[11px] text-gray-500 hover:text-red-600" hidden>Limpiar referencia</button>
                 <label class="block text-sm text-gray-600 mb-1 mt-3">Comentario</label>
-                <textarea name="comentario" rows="3" placeholder="Describe la observación..." required class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b6f9e]"></textarea>
+                <textarea id="refComentario" name="comentario" rows="3" placeholder="Describe la observación..." required class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0b6f9e]"></textarea>
                 <button type="submit" class="mt-3 w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-lg transition">Registrar observación</button>
             </form>
         </div>
+        <script>
+            (function () {
+                var ref = document.getElementById('refTexto');
+                var estado = document.getElementById('refStatus');
+                var limpiar = document.getElementById('refLimpiar');
+                var frame = document.getElementById('previewFrame');
+                if (!ref) { return; }
+
+                function marcar(texto) {
+                    texto = (texto || '').replace(/\s+/g, ' ').trim();
+                    if (texto.length < 2) { return; }
+                    ref.value = texto;
+                    estado.hidden = false;
+                    limpiar.hidden = false;
+                }
+
+                limpiar.addEventListener('click', function () {
+                    ref.value = '';
+                    estado.hidden = true;
+                    limpiar.hidden = true;
+                });
+
+                window.addEventListener('message', function (ev) {
+                    if (ev.data && ev.data.type === 'sigep-selection') { marcar(ev.data.text); }
+                });
+
+                if (frame && new URL(frame.src, location.href).origin === location.origin) {
+                    frame.addEventListener('load', function () {
+                        try {
+                            var doc = frame.contentDocument;
+                            if (!doc) { return; }
+                            var t;
+                            doc.addEventListener('selectionchange', function () {
+                                clearTimeout(t);
+                                t = setTimeout(function () {
+                                    var sel = frame.contentWindow.getSelection();
+                                    marcar(sel ? sel.toString() : '');
+                                }, 250);
+                            });
+                        } catch (e) {}
+                    });
+                }
+            })();
+        </script>
         <?php endif; ?>
 
         <div class="bg-white rounded-xl shadow p-5">

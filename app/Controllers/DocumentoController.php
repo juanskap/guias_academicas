@@ -280,6 +280,144 @@ class DocumentoController extends Controller
         exit('Este formato no se puede previsualizar en el navegador.');
     }
 
+    /** Visor embebido con PDF.js: capa de texto seleccionable para marcar fragmentos */
+    public function visor(int $id): void
+    {
+        $doc = (new Documento())->find($id);
+        if (!$doc) {
+            http_response_code(404);
+            exit('Documento no encontrado.');
+        }
+
+        $proyecto = (new Proyecto())->detail((int) $doc['proyecto_id']);
+        if (!$proyecto || !$this->canAccess($proyecto)) {
+            AuthMiddleware::requireRole('admin');
+        }
+
+        $ext = strtolower(pathinfo($doc['ruta'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['pdf', 'docx', 'odt', 'doc', 'rtf'], true)) {
+            header('Location: ' . url('documentos/previsualizar/' . $id));
+            exit;
+        }
+
+        // Si un documento Office no se puede convertir a PDF, usar la vista previa de texto
+        if ($ext !== 'pdf') {
+            $directorio = $doc['tipo'] === 'final' ? UPLOAD_FINALES : UPLOAD_DOCUMENTOS;
+            $ruta = $directorio . '/' . $doc['ruta'];
+            if (!is_file($ruta) || \App\Helpers\OfficeConverter::toPdf($ruta) === null) {
+                header('Location: ' . url('documentos/previsualizar/' . $id));
+                exit;
+            }
+        }
+
+        $pdfUrl = url('documentos/previsualizar/' . $id);
+        $pdfJs  = asset('vendor/pdfjs/pdf.min.js');
+        $worker = asset('vendor/pdfjs/pdf.worker.min.js');
+
+        header('Content-Type: text/html; charset=UTF-8');
+        echo <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visor</title>
+<style>
+    html, body { margin: 0; padding: 0; background: #525659; }
+    #viewer { padding: 12px 0; }
+    .page { position: relative; margin: 0 auto 12px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    .page canvas { display: block; }
+    .textLayer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; line-height: 1; }
+    .textLayer > span { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+    .textLayer ::selection { background: rgba(0,110,255,.35); }
+    #msg { color: #fff; font: 14px/1.6 Arial, sans-serif; padding: 24px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="viewer"></div>
+<div id="msg" hidden></div>
+<script src="{$pdfJs}"></script>
+<script>
+    (function () {
+        var PDF_URL = "{$pdfUrl}";
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "{$worker}";
+        var contenedor = document.getElementById('viewer');
+        var msg = document.getElementById('msg');
+
+        pdfjsLib.getDocument({ url: PDF_URL, disableRange: true, disableStream: true }).promise.then(function (pdf) {
+            var cadena = Promise.resolve();
+            for (var n = 1; n <= pdf.numPages; n++) {
+                (function (num) {
+                    cadena = cadena.then(function () { return pintarPagina(pdf, num); });
+                })(n);
+            }
+        }).catch(function () {
+            msg.hidden = false;
+            msg.textContent = 'No se pudo mostrar la vista previa. Descarga el documento para revisarlo.';
+        });
+
+        function pintarPagina(pdf, num) {
+            return pdf.getPage(num).then(function (page) {
+                var scale = 1.3;
+                var viewport = page.getViewport({ scale: scale });
+                var dpr = window.devicePixelRatio || 1;
+
+                var pageDiv = document.createElement('div');
+                pageDiv.className = 'page';
+                pageDiv.style.width = viewport.width + 'px';
+                pageDiv.style.height = viewport.height + 'px';
+
+                var canvas = document.createElement('canvas');
+                canvas.width = Math.floor(viewport.width * dpr);
+                canvas.height = Math.floor(viewport.height * dpr);
+                canvas.style.width = viewport.width + 'px';
+                canvas.style.height = viewport.height + 'px';
+                pageDiv.appendChild(canvas);
+
+                var textLayer = document.createElement('div');
+                textLayer.className = 'textLayer';
+                pageDiv.appendChild(textLayer);
+                contenedor.appendChild(pageDiv);
+
+                var tarea = page.render({
+                    canvasContext: canvas.getContext('2d'),
+                    viewport: viewport,
+                    transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null
+                });
+
+                return tarea.promise.then(function () {
+                    return page.getTextContent().then(function (textContent) {
+                        pdfjsLib.renderTextLayer({
+                            textContent: textContent,
+                            container: textLayer,
+                            viewport: viewport,
+                            textDivs: []
+                        });
+                    });
+                });
+            });
+        }
+
+        var temporizador;
+        function avisar() {
+            var sel = window.getSelection();
+            var texto = sel ? sel.toString().replace(/\s+/g, ' ').trim() : '';
+            if (texto.length >= 2) {
+                window.parent.postMessage({ type: 'sigep-selection', text: texto }, '*');
+            }
+        }
+        document.addEventListener('selectionchange', function () {
+            clearTimeout(temporizador);
+            temporizador = setTimeout(avisar, 250);
+        });
+    })();
+</script>
+</body>
+</html>
+HTML;
+        exit;
+    }
+
     /** Extrae el texto legible de un .docx o .odt (son ZIP con XML interno) */
     private function textoOffice(string $ruta, string $ext): string
     {
