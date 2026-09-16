@@ -43,10 +43,16 @@ use App\Core\Request;
         </div>
 
         <?php if ($usuario['rol'] === 'estudiante'): ?>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Código / Matrícula *</label>
                 <input type="text" name="codigo" required value="<?= e($usuario['codigo'] ?? '') ?>"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0b6f9e] outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cédula</label>
+                <input type="text" name="cedula" maxlength="10" value="<?= e($usuario['cedula'] ?? '') ?>"
+                       placeholder="10 dígitos"
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0b6f9e] outline-none">
             </div>
             <div>

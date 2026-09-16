@@ -68,13 +68,14 @@ class UsuarioController extends Controller
 
         // Campos específicos
         $codigo = trim((string) Request::post('codigo', ''));
+        $cedula = trim((string) Request::post('cedula', ''));
         $carrera = trim((string) Request::post('carrera', ''));
         $titulo = trim((string) Request::post('titulo', ''));
         $especialidad = trim((string) Request::post('especialidad', ''));
 
         $error = $this->validateCreate(
             $tipo, $nombres, $apellidos, $email,
-            $codigo, $carrera, $titulo, $especialidad
+            $codigo, $cedula, $carrera, $titulo, $especialidad
         );
 
         if ($error) {
@@ -87,6 +88,11 @@ class UsuarioController extends Controller
         $usuario = new Usuario();
         if ($usuario->firstWhere('email', $email)) {
             flash('error', 'Ya existe un usuario con ese correo electrónico.');
+            $this->flashOld(Request::all());
+            redirect_to('usuarios/nuevo');
+        }
+        if ($cedula !== '' && (new Estudiante())->firstWhere('cedula', $cedula)) {
+            flash('error', 'Ya existe un estudiante con esa cédula.');
             $this->flashOld(Request::all());
             redirect_to('usuarios/nuevo');
         }
@@ -119,6 +125,7 @@ class UsuarioController extends Controller
                 (new Estudiante())->create([
                     'usuario_id' => $usuarioId,
                     'codigo' => $codigo,
+                    'cedula' => $cedula !== '' ? $cedula : null,
                     'carrera' => $carrera,
                 ]);
             }
@@ -142,7 +149,7 @@ class UsuarioController extends Controller
         $db = Database::getConnection();
         $stmt = $db->prepare(
             "SELECT u.*, r.nombre AS rol,
-                    e.id AS estudiante_id, e.codigo, e.carrera,
+                    e.id AS estudiante_id, e.codigo, e.cedula, e.carrera,
                     d.id AS docente_id, d.titulo, d.especialidad
              FROM usuarios u
              INNER JOIN roles r ON r.id = u.rol_id
@@ -188,6 +195,7 @@ class UsuarioController extends Controller
         $password = (string) Request::post('password', '');
 
         $codigo = trim((string) Request::post('codigo', ''));
+        $cedula = trim((string) Request::post('cedula', ''));
         $carrera = trim((string) Request::post('carrera', ''));
         $titulo = trim((string) Request::post('titulo', ''));
         $especialidad = trim((string) Request::post('especialidad', ''));
@@ -231,9 +239,19 @@ class UsuarioController extends Controller
                     [$titulo ?: null, $especialidad ?: null, $id]
                 );
             } elseif ($actual['rol'] === 'estudiante') {
+                if ($cedula !== '' && !preg_match('/^\d{10}$/', $cedula)) {
+                    flash('error', 'La cédula debe tener 10 dígitos.');
+                    redirect_to('usuarios/editar/' . $id);
+                }
+                $stmt = $db->prepare("SELECT id FROM estudiantes WHERE cedula = ? AND usuario_id != ? LIMIT 1");
+                $stmt->execute([$cedula, $id]);
+                if ($cedula !== '' && $stmt->fetchColumn()) {
+                    flash('error', 'Ya existe otro estudiante con esa cédula.');
+                    redirect_to('usuarios/editar/' . $id);
+                }
                 (new Estudiante())->execute(
-                    "UPDATE estudiantes SET codigo = ?, carrera = ? WHERE usuario_id = ?",
-                    [$codigo, $carrera, $id]
+                    "UPDATE estudiantes SET codigo = ?, cedula = ?, carrera = ? WHERE usuario_id = ?",
+                    [$codigo, $cedula !== '' ? $cedula : null, $carrera, $id]
                 );
             }
 
@@ -288,7 +306,7 @@ class UsuarioController extends Controller
 
     private function validateCreate(
         string $tipo, string $nombres, string $apellidos, string $email,
-        string $codigo, string $carrera, string $titulo, string $especialidad
+        string $codigo, string $cedula, string $carrera, string $titulo, string $especialidad
     ): ?string {
         if (!in_array($tipo, ['estudiante', 'docente'], true)) {
             return 'Tipo de usuario inválido.';
@@ -305,6 +323,9 @@ class UsuarioController extends Controller
             }
             if ($carrera === '') {
                 return 'La carrera es obligatoria.';
+            }
+            if (!preg_match('/^\d{10}$/', $cedula)) {
+                return 'La cédula debe tener 10 dígitos.';
             }
         }
         return null;

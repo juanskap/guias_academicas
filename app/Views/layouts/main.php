@@ -32,6 +32,7 @@ use App\Core\Auth;
             <?php if ($rol === 'admin'): ?>
             <a href="<?= url('usuarios') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">👥 Usuarios</a>
             <a href="<?= url('tipos-proyecto') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">🗂️ Tipos de proyecto</a>
+            <a href="<?= url('periodos') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">📆 Periodos académicos</a>
             <a href="<?= url('configuracion') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">⚙️ Configuración</a>
             <?php endif; ?>
 
@@ -44,6 +45,7 @@ use App\Core\Auth;
             <?php endif; ?>
 
             <a href="<?= url('calendario') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">📅 Calendario</a>
+            <a href="<?= url('repositorio') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">📦 Repositorio</a>
             <a href="<?= url('notificaciones') ?>" class="flex items-center gap-3 px-5 py-3 text-sm hover:bg-white/10 transition">🔔 Notificaciones</a>
         </nav>
         <div class="p-4 border-t border-white/15">

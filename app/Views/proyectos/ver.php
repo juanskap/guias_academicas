@@ -29,7 +29,7 @@ $rol = Auth::role();
     <div class="bg-white rounded-xl shadow p-4">
         <p class="text-xs text-gray-500 uppercase">Estudiante</p>
         <p class="font-semibold mt-1"><?= e($proyecto['estudiante_nombre']) ?></p>
-        <p class="text-xs text-gray-400"><?= e($proyecto['carrera'] ?? '') ?> · <?= e($proyecto['estudiante_codigo'] ?? '') ?></p>
+        <p class="text-xs text-gray-400"><?= e($proyecto['carrera'] ?? '') ?> · <?= e($proyecto['estudiante_codigo'] ?? '') ?><?= !empty($proyecto['estudiante_cedula']) ? ' · C.C. ' . e($proyecto['estudiante_cedula']) : '' ?></p>
     </div>
     <div class="bg-white rounded-xl shadow p-4">
         <p class="text-xs text-gray-500 uppercase">Tutor</p>
@@ -39,8 +39,27 @@ $rol = Auth::role();
     <div class="bg-white rounded-xl shadow p-4">
         <p class="text-xs text-gray-500 uppercase">Estado</p>
         <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold <?= e(estado_badge($proyecto['estado'])) ?>"><?= e(ucwords(str_replace('_', ' ', $proyecto['estado']))) ?></span>
+        <p class="text-xs text-gray-400 mt-2"><?= $proyecto['periodo_id'] ? 'Periodo: ' . e($proyecto['periodo_nombre'] ?? '') : 'Periodo: sin asignar' ?></p>
     </div>
 </div>
+
+<?php if ($rol === 'admin'): ?>
+<form method="post" action="<?= url('proyectos/asignar-periodo/' . $proyecto['id']) ?>" class="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap items-end gap-3">
+    <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
+    <div class="flex-1 min-w-[200px]">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Periodo académico</label>
+        <select name="periodo_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm">
+            <option value="0">Sin periodo</option>
+            <?php foreach ($periodos as $pa): ?>
+            <option value="<?= (int) $pa['id'] ?>" <?= (int) $pa['id'] === (int) $proyecto['periodo_id'] ? 'selected' : '' ?>>
+                <?= e($pa['nombre']) ?> (<?= e(date('d/m/Y', strtotime($pa['fecha_inicio']))) ?> — <?= e(date('d/m/Y', strtotime($pa['fecha_fin']))) ?>)
+            </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <button type="submit" class="bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2 rounded-lg">Asignar periodo</button>
+</form>
+<?php endif; ?>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Etapas -->

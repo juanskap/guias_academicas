@@ -41,10 +41,12 @@ CREATE TABLE IF NOT EXISTS estudiantes (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     usuario_id INT UNSIGNED NOT NULL,
     codigo VARCHAR(20) NOT NULL,
+    cedula VARCHAR(20) NULL,
     carrera VARCHAR(120) NOT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uq_estudiantes_usuario (usuario_id),
     UNIQUE KEY uq_estudiantes_codigo (codigo),
+    UNIQUE KEY uq_estudiantes_cedula (cedula),
     CONSTRAINT fk_estudiantes_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -91,6 +93,20 @@ CREATE TABLE IF NOT EXISTS etapas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
+-- 6.5 periodos_academicos
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS periodos_academicos (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    nombre VARCHAR(60) NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NOT NULL,
+    activo TINYINT(1) NOT NULL DEFAULT 1,
+    creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_periodo_nombre (nombre)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
 -- 7. proyectos
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS proyectos (
@@ -99,6 +115,7 @@ CREATE TABLE IF NOT EXISTS proyectos (
     nombre VARCHAR(200) NOT NULL,
     descripcion TEXT NULL,
     tipo_proyecto_id INT UNSIGNED NOT NULL,
+    periodo_id INT UNSIGNED NULL,
     estudiante_id INT UNSIGNED NOT NULL,
     fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_inicio DATE NULL,
@@ -113,9 +130,11 @@ CREATE TABLE IF NOT EXISTS proyectos (
     KEY idx_proyectos_estudiante (estudiante_id),
     KEY idx_proyectos_estado (estado),
     KEY idx_proyectos_etapa_actual (etapa_actual_id),
+    KEY idx_proyectos_periodo (periodo_id),
     CONSTRAINT fk_proyectos_tipo FOREIGN KEY (tipo_proyecto_id) REFERENCES tipos_proyecto (id),
     CONSTRAINT fk_proyectos_estudiante FOREIGN KEY (estudiante_id) REFERENCES estudiantes (id),
-    CONSTRAINT fk_proyectos_etapa_actual FOREIGN KEY (etapa_actual_id) REFERENCES etapas (id)
+    CONSTRAINT fk_proyectos_etapa_actual FOREIGN KEY (etapa_actual_id) REFERENCES etapas (id),
+    CONSTRAINT fk_proyectos_periodo FOREIGN KEY (periodo_id) REFERENCES periodos_academicos (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------
@@ -293,6 +312,37 @@ CREATE TABLE IF NOT EXISTS historial_acciones (
     CONSTRAINT fk_hist_proyecto FOREIGN KEY (proyecto_id) REFERENCES proyectos (id) ON DELETE SET NULL,
     CONSTRAINT fk_hist_etapa FOREIGN KEY (etapa_id) REFERENCES etapas (id) ON DELETE SET NULL,
     CONSTRAINT fk_hist_documento FOREIGN KEY (documento_id) REFERENCES documentos (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ------------------------------------------------------------
+-- 16.5 repositorio (archivo institucional)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS repositorio (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    proyecto_id INT UNSIGNED NULL,
+    periodo_id INT UNSIGNED NULL,
+    estudiante_id INT UNSIGNED NULL,
+    grupo CHAR(36) NULL,
+    tipo ENUM('documento_final','entregable_tecnico','anexo','otro') NOT NULL DEFAULT 'anexo',
+    titulo VARCHAR(200) NOT NULL,
+    nombre_original VARCHAR(255) NOT NULL,
+    ruta VARCHAR(500) NOT NULL,
+    formato VARCHAR(20) NOT NULL DEFAULT '',
+    tamanio BIGINT UNSIGNED NOT NULL DEFAULT 0,
+    version INT UNSIGNED NOT NULL DEFAULT 1,
+    subido_por INT UNSIGNED NOT NULL,
+    estado ENUM('activo','reemplazado','eliminado') NOT NULL DEFAULT 'activo',
+    creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_repo_proyecto (proyecto_id),
+    KEY idx_repo_periodo (periodo_id),
+    KEY idx_repo_estudiante (estudiante_id),
+    KEY idx_repo_tipo (tipo),
+    KEY idx_repo_estado (estado),
+    CONSTRAINT fk_repo_proyecto FOREIGN KEY (proyecto_id) REFERENCES proyectos (id) ON DELETE SET NULL,
+    CONSTRAINT fk_repo_periodo FOREIGN KEY (periodo_id) REFERENCES periodos_academicos (id) ON DELETE SET NULL,
+    CONSTRAINT fk_repo_estudiante FOREIGN KEY (estudiante_id) REFERENCES estudiantes (id) ON DELETE SET NULL,
+    CONSTRAINT fk_repo_usuario FOREIGN KEY (subido_por) REFERENCES usuarios (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------

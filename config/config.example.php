@@ -27,10 +27,13 @@ define('UPLOAD_PATH', ROOT_PATH . '/storage/uploads');
 define('UPLOAD_DOCUMENTOS', UPLOAD_PATH . '/documentos');
 define('UPLOAD_FINALES', UPLOAD_PATH . '/finales');
 define('UPLOAD_CONSOLIDADOS', UPLOAD_PATH . '/consolidados');
+define('UPLOAD_REPOSITORIO', UPLOAD_PATH . '/repositorio');
 
 // Límite de subida de archivos (en bytes) - 25 MB por defecto (ajustable desde Configuración)
 define('MAX_FILE_SIZE', 25 * 1024 * 1024);
 define('ALLOWED_EXTENSIONS', ['pdf', 'doc', 'docx', 'txt', 'odt']);
+// Extensiones del repositorio: documentos y comprimidos (código de aplicaciones)
+define('ALLOWED_REPO_EXTENSIONS', ['pdf', 'doc', 'docx', 'txt', 'odt', 'xlsx', 'xls', 'pptx', 'ppt', 'zip', 'rar', '7z', 'tar', 'gz']);
 
 // Contraseña por defecto al crear usuarios desde el panel
 define('DEFAULT_PASSWORD', 'Istel2026+');

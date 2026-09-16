@@ -102,7 +102,54 @@ class Consolidado
                 ->execute([$usuarioId, $accion, $descripcion, $proyectoId]);
         }
 
+        $this->archivarEnRepositorio($resultado, $proyecto, $usuarioId);
+
         return $resultado;
+    }
+
+    /** Registra los documentos unificados generados en el repositorio institucional */
+    private function archivarEnRepositorio(array $resultado, array $proyecto, ?int $usuarioId): void
+    {
+        if (!class_exists(\App\Models\Repositorio::class)) {
+            return;
+        }
+
+        $grupo = bin2hex(random_bytes(16));
+        $rep = new \App\Models\Repositorio();
+        $estudianteId = (int) ($proyecto['estudiante_record_id'] ?? 0) ?: null;
+        $periodoId = !empty($proyecto['periodo_id']) ? (int) $proyecto['periodo_id'] : null;
+        $proyectoId = (int) $proyecto['id'];
+        $usuarioId = $usuarioId ?: \App\Core\Auth::id();
+
+        $etiquetas = [
+            'perfil_pdf' => ['Perfil (PDF)', 'pdf'],
+            'perfil_docx' => ['Perfil (Word)', 'docx'],
+            'resto_pdf' => ['Proyecto (PDF)', 'pdf'],
+            'resto_docx' => ['Proyecto (Word)', 'docx'],
+        ];
+
+        foreach ($etiquetas as $clave => [$titulo, $formato]) {
+            $ruta = $resultado[$clave] ?? null;
+            if (!$ruta || !is_file($ruta)) {
+                continue;
+            }
+            $rep->reemplazarAnteriores($proyectoId, 'documento_final', $titulo, $formato);
+            $rep->create([
+                'proyecto_id' => $proyectoId,
+                'periodo_id' => $periodoId,
+                'estudiante_id' => $estudianteId,
+                'grupo' => $grupo,
+                'tipo' => 'documento_final',
+                'titulo' => $titulo,
+                'nombre_original' => basename($ruta),
+                'ruta' => basename($ruta),
+                'formato' => $formato,
+                'tamanio' => (int) filesize($ruta),
+                'version' => 1,
+                'subido_por' => $usuarioId,
+                'estado' => 'activo',
+            ]);
+        }
     }
 
     /** Ruta absoluta de un archivo consolidado si existe (tipo: perfil|proyecto, formato: pdf|docx) */

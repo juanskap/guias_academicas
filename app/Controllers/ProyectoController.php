@@ -152,7 +152,46 @@ class ProyectoController extends Controller
             'historial' => $historial,
             'consolidadoCompleto' => (float) $proyecto['porcentaje_avance'] >= 100,
             'consolidadoGenerado' => (new \App\Helpers\Consolidado())->generados($id),
+            'periodos' => Auth::role() === 'admin' ? (new \App\Models\PeriodoAcademico())->all() : [],
         ]);
+    }
+
+    /** Asigna el periodo académico a un proyecto (solo admin, asignación manual) */
+    public function asignarPeriodo(int $id): void
+    {
+        AuthMiddleware::requireRole('admin');
+
+        if (!Request::csrfValidate()) {
+            flash('error', 'La sesión expiró, inténtalo de nuevo.');
+            redirect_to('proyectos/ver/' . $id);
+        }
+
+        $proyecto = (new Proyecto())->detail($id);
+        if (!$proyecto) {
+            flash('error', 'Proyecto no encontrado.');
+            redirect_to('proyectos');
+        }
+
+        $periodoId = (int) Request::post('periodo_id', 0);
+        $periodo = $periodoId ? (new \App\Models\PeriodoAcademico())->find($periodoId) : null;
+        if ($periodoId && !$periodo) {
+            flash('error', 'Periodo académico no válido.');
+            redirect_to('proyectos/ver/' . $id);
+        }
+
+        (new Proyecto())->update($id, ['periodo_id' => $periodoId ?: null]);
+
+        $this->registrarHistorial($id, 'Asignación de periodo', "Periodo: " . ($periodo['nombre'] ?? 'sin periodo'));
+        flash('success', "Periodo académico asignado: " . ($periodo['nombre'] ?? 'Ninguno'));
+        redirect_to('proyectos/ver/' . $id);
+    }
+
+    private function registrarHistorial(int $proyectoId, string $accion, string $descripcion): void
+    {
+        $stmt = Database::getConnection()->prepare(
+            "INSERT INTO historial_acciones (usuario_id, accion, descripcion, proyecto_id) VALUES (?, ?, ?, ?)"
+        );
+        $stmt->execute([Auth::id(), $accion, $descripcion, $proyectoId]);
     }
 
     /** Formulario para asignar tutor (solo admin) */
@@ -223,13 +262,5 @@ class ProyectoController extends Controller
     private function canAccess(array $proyecto): bool
     {
         return (new Proyecto())->puedeVer((int) $proyecto['id'], Auth::role(), Auth::id());
-    }
-
-    private function registrarHistorial(int $proyectoId, string $accion, string $descripcion): void
-    {
-        $stmt = Database::getConnection()->prepare(
-            "INSERT INTO historial_acciones (usuario_id, accion, descripcion, proyecto_id) VALUES (?, ?, ?, ?)"
-        );
-        $stmt->execute([Auth::id(), $accion, $descripcion, $proyectoId]);
     }
 }

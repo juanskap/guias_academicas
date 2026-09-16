@@ -12,6 +12,8 @@ node_modules/
 !/storage/uploads/finales/.htaccess
 /storage/uploads/consolidados/*
 !/storage/uploads/consolidados/.htaccess
+/storage/uploads/repositorio/*
+!/storage/uploads/repositorio/.htaccess
 
 # Caché de conversiones (LibreOffice → PDF) y perfil de LibreOffice
 /storage/uploads/vistaprevia/*

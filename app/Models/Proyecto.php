@@ -78,13 +78,15 @@ class Proyecto extends Model
     {
         $rows = $this->query(
             "SELECT p.*, t.nombre AS tipo_proyecto,
+                    pa.nombre AS periodo_nombre,
                     CONCAT(ue.nombres, ' ', ue.apellidos) AS estudiante_nombre,
-                    e.id AS estudiante_record_id, e.codigo AS estudiante_codigo, e.carrera,
+                    e.id AS estudiante_record_id, e.codigo AS estudiante_codigo, e.cedula AS estudiante_cedula, e.carrera,
                     CONCAT(ud.nombres, ' ', ud.apellidos) AS tutor_nombre,
                     d.id AS docente_record_id, a.id AS asignacion_id,
                     es.nombre AS etapa_actual_nombre
              FROM proyectos p
              INNER JOIN tipos_proyecto t ON t.id = p.tipo_proyecto_id
+             LEFT JOIN periodos_academicos pa ON pa.id = p.periodo_id
              INNER JOIN estudiantes e ON e.id = p.estudiante_id
              INNER JOIN usuarios ue ON ue.id = e.usuario_id
              LEFT JOIN asignaciones a ON a.proyecto_id = p.id AND a.estado = 'activa'

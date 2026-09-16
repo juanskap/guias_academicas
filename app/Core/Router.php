@@ -19,6 +19,8 @@ class Router
         'tipos-proyecto'  => 'TipoProyectoController',
         'configuracion'   => 'ConfiguracionController',
         'consolidado'     => 'ConsolidadoController',
+        'periodos'        => 'PeriodoController',
+        'repositorio'     => 'RepositorioController',
         'mis-proyectos'   => 'ProyectoController',
         'proyectos'       => 'ProyectoController',
         'documentos'      => 'DocumentoController',
