@@ -94,15 +94,23 @@ $rol = Auth::role();
                         <?php if ($et['estado_etapa'] === 'aprobada'): ?>
                             Etapa aprobada · <?= e($et['final_nombre'] ?? 'Documento final') ?>
                         <?php elseif ($bloqueada && $et['trabajo_id']): ?>
-                            Documento v<?= (int) $et['trabajo_version'] ?> · <?= e(ucwords(str_replace('_', ' ', $et['trabajo_estado']))) ?> · 🔒 Completa las etapas anteriores
+                            Documento v<?= (int) $et['trabajo_version'] ?> · 🔒 Completa las etapas anteriores
                         <?php elseif ($bloqueada): ?>
                             Pendiente de documento · 🔒 Completa las etapas anteriores
                         <?php elseif ($et['trabajo_id']): ?>
-                            Documento v<?= (int) $et['trabajo_version'] ?> · <?= e(ucwords(str_replace('_', ' ', $et['trabajo_estado']))) ?>
+                            Documento v<?= (int) $et['trabajo_version'] ?>
                         <?php else: ?>
                             Pendiente de documento
                         <?php endif; ?>
                     </p>
+                    <?php if ($et['trabajo_id'] && $et['estado_etapa'] !== 'aprobada'): ?>
+                    <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-semibold <?= e(estado_badge($et['trabajo_estado'])) ?>">
+                        <?= e(documento_estado_label($et['trabajo_estado'])) ?>
+                    </span>
+                    <?php if ((int) ($et['trabajo_observaciones'] ?? 0) > 0): ?>
+                    <a href="<?= url('documentos/ver/' . $et['trabajo_id']) ?>" class="text-[11px] font-semibold text-orange-600 hover:underline">· <?= (int) $et['trabajo_observaciones'] ?> observación(es)</a>
+                    <?php endif; ?>
+                    <?php endif; ?>
                 </div>
                 <div class="flex items-center gap-2">
                     <?php if ($et['trabajo_id']): ?>

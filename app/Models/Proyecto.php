@@ -109,6 +109,7 @@ class Proyecto extends Model
                          ELSE 'pendiente' END AS estado_etapa,
                     dw.id AS trabajo_id, dw.version AS trabajo_version,
                     dw.nombre_original AS trabajo_nombre, dw.estado AS trabajo_estado,
+                    (SELECT COUNT(*) FROM observaciones o WHERE o.documento_id = dw.id) AS trabajo_observaciones,
                     df.id AS final_id, df.nombre_original AS final_nombre, df.ruta AS final_ruta
              FROM etapas et
              LEFT JOIN (

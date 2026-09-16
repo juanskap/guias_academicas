@@ -6,6 +6,7 @@ use App\Core\Auth;
 use App\Core\Request;
 $rol = Auth::role();
 $esTrabajo = $documento['tipo'] === 'trabajo';
+$reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revision'], true);
 ?>
 
 <div class="mb-6">
@@ -18,7 +19,7 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
         <div class="flex gap-2">
             <a href="<?= url('documentos/descargar/' . $documento['id']) ?>" class="px-4 py-2 bg-[#005880] hover:bg-[#004764] text-white text-sm font-semibold rounded-lg transition">⬇ Descargar</a>
             <?php if ($esTrabajo && $rol === 'estudiante'): ?>
-            <a href="#subir" class="px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition">⬆ Nueva versión</a>
+            <a href="#subir" class="px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition"><?= $reemplaza ? '⬆ Corregir documento' : '⬆ Nueva versión' ?></a>
             <?php endif; ?>
             <?php if ($esTrabajo && in_array($rol, ['admin', 'docente'], true)): ?>
             <form method="post" action="<?= url('documentos/aprobar/' . $documento['id']) ?>">
@@ -41,7 +42,7 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
     </div>
     <div class="bg-white rounded-xl shadow p-4">
         <p class="text-xs text-gray-500 uppercase">Estado</p>
-        <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold <?= e(estado_badge($documento['estado'])) ?>"><?= e(ucwords(str_replace('_', ' ', $documento['estado']))) ?></span>
+        <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold <?= e(estado_badge($documento['estado'])) ?>"><?= e(documento_estado_label($documento['estado'])) ?></span>
     </div>
     <div class="bg-white rounded-xl shadow p-4">
         <p class="text-xs text-gray-500 uppercase">Subido por</p>
@@ -52,15 +53,20 @@ $esTrabajo = $documento['tipo'] === 'trabajo';
 <!-- Subir nueva versión (estudiante) -->
 <?php if ($esTrabajo && $rol === 'estudiante'): ?>
 <div id="subir" class="bg-white rounded-xl shadow p-5 mb-6">
-    <h2 class="font-semibold text-gray-900 mb-3">Subir nueva versión</h2>
+    <h2 class="font-semibold text-gray-900 mb-3"><?= $reemplaza ? 'Corregir / reemplazar documento' : 'Subir nueva versión' ?></h2>
     <form method="post" action="<?= url('documentos/subir') ?>" enctype="multipart/form-data" class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
         <input type="hidden" name="proyecto_id" value="<?= (int) $documento['proyecto_id'] ?>">
         <input type="hidden" name="etapa_id" value="<?= (int) $documento['etapa_id'] ?>">
         <input type="file" name="documento" accept=".pdf,.doc,.docx,.txt,.odt" required class="text-sm">
-        <button type="submit" class="px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition">Subir v<?= (int) $documento['version'] + 1 ?></button>
+        <button type="submit" class="px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition"><?= $reemplaza ? 'Reemplazar v' . (int) $documento['version'] : 'Subir v' . ((int) $documento['version'] + 1) ?></button>
     </form>
-    <p class="text-xs text-gray-400 mt-2">Permitidos: <?= e(implode(', ', ALLOWED_EXTENSIONS)) ?> · máx. <?= (int) ((new \App\Models\Configuracion())->getInt('max_upload_mb', (int) (MAX_FILE_SIZE / 1024 / 1024))) ?: (int) (MAX_FILE_SIZE / 1024 / 1024) ?> MB · se conserva solo la versión actual.</p>
+    <p class="text-xs text-gray-400 mt-2">
+        Permitidos: <?= e(implode(', ', ALLOWED_EXTENSIONS)) ?> · máx. <?= (int) ((new \App\Models\Configuracion())->getInt('max_upload_mb', (int) (MAX_FILE_SIZE / 1024 / 1024))) ?: (int) (MAX_FILE_SIZE / 1024 / 1024) ?> MB.
+        <?= $reemplaza
+            ? 'El tutor aún no lo revisa: al subir se reemplaza esta versión.'
+            : 'El tutor ya revisó este documento: se conservará como v' . (int) $documento['version'] . ' y se creará la v' . ((int) $documento['version'] + 1) . '.' ?>
+    </p>
 </div>
 <?php endif; ?>
 

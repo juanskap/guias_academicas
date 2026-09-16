@@ -110,6 +110,20 @@ function estado_badge(string $estado): string
     return $map[$estado] ?? 'bg-gray-200 text-gray-600';
 }
 
+/** Etiqueta explícita (para el estudiante) del estado de un documento de etapa */
+function documento_estado_label(string $estado): string
+{
+    $map = [
+        'enviado'           => 'Enviado · esperando revisión del tutor',
+        'en_revision'       => 'En revisión por el tutor',
+        'con_observaciones' => 'Revisado · el tutor dejó observaciones',
+        'en_correccion'     => 'Revisado · en corrección',
+        'aprobado'          => 'Revisado y aprobado',
+        'final'             => 'Documento final aprobado',
+    ];
+    return $map[$estado] ?? ucwords(str_replace('_', ' ', $estado));
+}
+
 /** Devuelve el campo oculto CSRF listo para formularios POST */
 function csrf_field(): string
 {
