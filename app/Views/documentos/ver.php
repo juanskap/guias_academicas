@@ -163,7 +163,16 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
                     var n = lista ? lista.querySelectorAll('[data-obs]').length : 0;
                     if (conteo) { conteo.textContent = n || (parseInt(conteo.textContent, 10) + 1); }
                     if (frame && frame.contentWindow) { frame.contentWindow.postMessage({ type: 'sigep-repaint' }, '*'); }
-                    if (lista && lista.lastElementChild) { lista.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+                    mostrarToast();
+                }
+
+                var toast = document.getElementById('obsToast');
+                var toastTimer;
+                function mostrarToast() {
+                    if (!toast) { return; }
+                    toast.style.display = 'flex';
+                    clearTimeout(toastTimer);
+                    toastTimer = setTimeout(function () { toast.style.display = 'none'; }, 2200);
                 }
 
                 function abrirModal(texto, pages) {
@@ -236,6 +245,11 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
             </dl>
         </div>
     </div>
+</div>
+
+<!-- Aviso de confirmación (no mueve la página) -->
+<div id="obsToast" style="display: none" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] items-center gap-2 bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-lg">
+    <span>✓</span><span>Observación registrada</span>
 </div>
 
 <!-- Modal para observación sobre texto marcado -->
