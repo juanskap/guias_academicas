@@ -406,6 +406,8 @@ class DocumentoController extends Controller
         }
 
         function pintarAnotaciones() {
+            var previos = document.querySelectorAll('.resaltado');
+            for (var i = 0; i < previos.length; i++) { previos[i].parentNode.removeChild(previos[i]); }
             return fetch(ANOT_URL, { credentials: 'same-origin' }).then(function (r) {
                 return r.ok ? r.json() : null;
             }).then(function (res) {
@@ -470,6 +472,10 @@ class DocumentoController extends Controller
         document.addEventListener('selectionchange', function () {
             clearTimeout(temporizador);
             temporizador = setTimeout(avisar, 250);
+        });
+
+        window.addEventListener('message', function (ev) {
+            if (ev.data && ev.data.type === 'sigep-repaint') { pintarAnotaciones(); }
         });
     })();
 </script>
@@ -561,13 +567,17 @@ HTML;
     /** Crea una observación sobre un documento (tutor o admin) */
     public function observar(): void
     {
+        $ajax = $this->esAjax();
+
         if (!Request::csrfValidate()) {
+            if ($ajax) { $this->jsonResponse(['ok' => false, 'error' => 'La sesión expiró, inténtalo de nuevo.'], 419); }
             flash('error', 'La sesión expiró, inténtalo de nuevo.');
             redirect_to('proyectos');
         }
 
         $doc = (new Documento())->find((int) Request::post('documento_id', 0));
         if (!$doc) {
+            if ($ajax) { $this->jsonResponse(['ok' => false, 'error' => 'Documento no encontrado.'], 404); }
             flash('error', 'Documento no encontrado.');
             redirect_to('proyectos');
         }
@@ -581,6 +591,7 @@ HTML;
         $textoSeleccionado = trim((string) Request::post('texto_seleccionado', ''));
 
         if ($comentario === '') {
+            if ($ajax) { $this->jsonResponse(['ok' => false, 'error' => 'Escribe un comentario para la observación.'], 422); }
             flash('error', 'Escribe un comentario para la observación.');
             redirect_to('documentos/ver/' . $doc['id']);
         }
@@ -606,8 +617,36 @@ HTML;
         $inv = (new Proyecto())->involucrados((int) $doc['proyecto_id']);
         notificar([$inv['estudiante_usuario_id']], 'Nueva observación', "El tutor observó el documento \"{$doc['nombre_original']}\".", (int) $doc['proyecto_id'], 'observacion', Auth::id());
 
+        if ($ajax) {
+            $obs = (new Documento())->observacionConAutor($obsId);
+            $rol = Auth::role();
+            ob_start();
+            require VIEW_PATH . '/documentos/_observacion.php';
+            $html = ob_get_clean();
+            $total = count((new Documento())->conObservaciones((int) $doc['id'])['observaciones'] ?? []);
+            $this->jsonResponse(['ok' => true, 'html' => $html, 'total' => $total]);
+        }
+
         flash('success', 'Observación registrada.');
         redirect_to('documentos/ver/' . $doc['id']);
+    }
+
+    /** Indica si la petición espera una respuesta JSON (fetch/AJAX) */
+    private function esAjax(): bool
+    {
+        if (strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest') {
+            return true;
+        }
+        return str_contains(strtolower($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json');
+    }
+
+    /** Emite una respuesta JSON y termina */
+    private function jsonResponse(array $data, int $code = 200): void
+    {
+        http_response_code($code);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode($data);
+        exit;
     }
 
     /** Responde a una observación (estudiante o tutor) */

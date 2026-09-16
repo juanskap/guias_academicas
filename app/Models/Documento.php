@@ -96,6 +96,24 @@ class Documento extends Model
         return $doc;
     }
 
+    /** Observación con datos del autor y rol (para renderizar su tarjeta) */
+    public function observacionConAutor(int $id): ?array
+    {
+        $rows = $this->query(
+            "SELECT o.*, u.nombres, u.apellidos, r.nombre AS rol
+             FROM observaciones o
+             INNER JOIN usuarios u ON u.id = o.usuario_id
+             INNER JOIN roles r ON r.id = u.rol_id
+             WHERE o.id = ? LIMIT 1",
+            [$id]
+        );
+        $obs = $rows[0] ?? null;
+        if ($obs) {
+            $obs['respuestas'] = [];
+        }
+        return $obs;
+    }
+
     /** Observaciones pendientes de un proyecto (para el tutor) */
     public function pendientesDeProyecto(int $proyectoId): array
     {
