@@ -1,5 +1,10 @@
 /* SIGEP - Estilos base complementarios a Tailwind */
 
+/* El atributo [hidden] debe ganar a las utilidades de Tailwind (flex, block, etc.) */
+[hidden] {
+    display: none !important;
+}
+
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }

@@ -173,12 +173,12 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
                     mTexto.textContent = texto;
                     mComentario.value = '';
                     mError.hidden = true;
-                    modal.hidden = false;
+                    modal.style.display = 'flex';
                     mComentario.focus();
                 }
 
                 function cerrarModal() {
-                    modal.hidden = true;
+                    modal.style.display = 'none';
                     mComentario.value = '';
                     mError.hidden = true;
                     seleccion = null;
@@ -204,7 +204,7 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
                 mCancelar.addEventListener('click', cerrarModal);
                 mCerrar.addEventListener('click', cerrarModal);
                 modal.addEventListener('click', function (ev) { if (ev.target === modal) { cerrarModal(); } });
-                document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !modal.hidden) { cerrarModal(); } });
+                document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && modal.style.display !== 'none') { cerrarModal(); } });
 
                 fGeneral.addEventListener('submit', function (ev) {
                     ev.preventDefault();
@@ -238,7 +238,7 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
 </div>
 
 <!-- Modal para observación sobre texto marcado -->
-<div id="obsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,.5)" hidden>
+<div id="obsModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none; background: rgba(0,0,0,.5)">
     <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-5">
         <div class="flex items-start justify-between mb-3">
             <h3 class="font-semibold text-gray-900">Nueva observación</h3>
