@@ -94,7 +94,7 @@ Notas clave:
 - ✅ Subida/reemplazo de documento de trabajo por etapa (versión++, solo se conserva la actual). Rutas: `documentos/subir-form/{proyecto}/{etapa}` (GET form), `documentos/subir` (POST), `documentos/ver/{id}`, `documentos/descargar/{id}`.
 - ✅ Observaciones del tutor con texto seleccionado + hilo de respuestas/correcciones (`documentos/observar`, `documentos/responder`, `documentos/aprobar-observacion/{id}`). Al observar: doc y proyecto pasan a `con_observaciones`; respuesta del estudiante → `en_correccion`.
 - ✅ Aprobación de etapa (`documentos/aprobar/{id}`): copia el archivo a `storage/uploads/finales`, crea documento `final` permanente, recalcula avance (% etapas finales), avanza `etapa_actual_id`, proyecto `en_revision` o `aprobado` al 100%.
-- Archivos en `storage/uploads/{documentos,finales}` servidos vía controlador (bloqueados por .htaccess). Límites: MAX_FILE_SIZE 10 MB, ALLOWED_EXTENSIONS pdf/doc/docx/txt/odt.
+- Archivos en `storage/uploads/{documentos,finales}` servidos vía controlador (bloqueados por .htaccess). Límites: MAX_FILE_SIZE 25 MB por defecto (ajustable por admin en `configuracion`), ALLOWED_EXTENSIONS pdf/doc/docx/txt/odt.
 
 **Fase 5 — Actividades y Plazos (DEMO implementada y verificada)**:
 - Modelos `Actividad` y `Plazo` (con `porProyecto()` y `marcarVencidos()`); controlador `PlanController`; vista `proyectos/plan.php`; acceso compartido via `Proyecto::puedeVer()` (refactor de `ProyectoController::canAccess`).

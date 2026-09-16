@@ -27,8 +27,8 @@ define('UPLOAD_PATH', ROOT_PATH . '/storage/uploads');
 define('UPLOAD_DOCUMENTOS', UPLOAD_PATH . '/documentos');
 define('UPLOAD_FINALES', UPLOAD_PATH . '/finales');
 
-// Límite de subida de archivos (en bytes) - 10 MB
-define('MAX_FILE_SIZE', 10 * 1024 * 1024);
+// Límite de subida de archivos (en bytes) - 25 MB por defecto (ajustable desde Configuración)
+define('MAX_FILE_SIZE', 25 * 1024 * 1024);
 define('ALLOWED_EXTENSIONS', ['pdf', 'doc', 'docx', 'txt', 'odt']);
 
 // Contraseña por defecto al crear usuarios desde el panel
