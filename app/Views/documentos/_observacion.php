@@ -2,7 +2,7 @@
 /** Parcial: una tarjeta de observación. Requiere $obs y $rol en el scope. */
 use App\Core\Request;
 ?>
-<div data-obs class="border rounded-lg p-4 <?= $obs['estado'] === 'aprobada' ? 'border-green-300 bg-green-50' : 'border-gray-200' ?>">
+<div data-obs data-estado="<?= e($obs['estado']) ?>" class="border rounded-lg p-4 <?= $obs['estado'] === 'aprobada' ? 'border-green-300 bg-green-50' : 'border-gray-200' ?>">
     <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
             <span class="text-xs font-semibold uppercase bg-gray-100 px-2 py-0.5 rounded-full text-gray-600"><?= e($obs['rol']) ?></span>

@@ -7,6 +7,12 @@ use App\Core\Request;
 $rol = Auth::role();
 $esTrabajo = $documento['tipo'] === 'trabajo';
 $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revision'], true);
+$obsTotal = count($documento['observaciones']);
+$obsAprobadas = 0;
+foreach ($documento['observaciones'] as $o) {
+    if ($o['estado'] === 'aprobada') { $obsAprobadas++; }
+}
+$obsPendientes = $obsTotal - $obsAprobadas;
 ?>
 
 <div class="mb-6">
@@ -22,10 +28,15 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
             <a href="#subir" class="px-4 py-2 bg-[#0B803A] hover:bg-[#0a6b31] text-white text-sm font-semibold rounded-lg transition"><?= $reemplaza ? '⬆ Corregir documento' : '⬆ Nueva versión' ?></a>
             <?php endif; ?>
             <?php if ($esTrabajo && in_array($rol, ['admin', 'docente'], true)): ?>
-            <form method="post" action="<?= url('documentos/aprobar/' . $documento['id']) ?>">
-                <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
-                <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition">✔ Aprobar etapa</button>
-            </form>
+            <div class="flex flex-col items-end gap-1">
+                <form method="post" action="<?= url('documentos/aprobar/' . $documento['id']) ?>">
+                    <input type="hidden" name="_csrf" value="<?= e(Request::csrfToken()) ?>">
+                    <button type="submit" <?= $obsPendientes > 0 ? 'disabled title="Aprueba todas las observaciones antes de aprobar la etapa"' : '' ?> class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">✔ Aprobar etapa</button>
+                </form>
+                <?php if ($obsPendientes > 0): ?>
+                <span class="text-xs text-orange-600 font-medium">Faltan <?= $obsPendientes ?> observación(es) por aprobar</span>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>
@@ -92,19 +103,21 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
             Descárgalo para revisarlo y haz tus observaciones abajo.
         </div>
         <?php endif; ?>
+        <?php if (in_array($ext, ['docx', 'odt', 'doc'], true)): ?>
+        <p class="text-xs text-gray-500 mt-3"><strong>Vista previa:</strong> el formato original se convierte automáticamente. Para mejor resultado, también puedes subir el documento en PDF (Archivo → Guardar como PDF).</p>
+        <?php endif; ?>
     </div>
 
-    <?php if (in_array($ext, ['docx', 'odt', 'doc'], true)): ?>
-    <p class="text-xs text-gray-500 -mt-3 mb-6"><strong>Vista previa:</strong> el formato original se convierte automáticamente. Para mejor resultado, también puedes subir el documento en PDF (Archivo → Guardar como PDF).</p>
-    <?php endif; ?>
-
     <!-- Hilo de observaciones -->
-    <div class="lg:col-span-2 bg-white rounded-xl shadow p-5">
-        <h2 class="font-semibold text-gray-900 mb-4">Observaciones (<span id="obsCount"><?= count($documento['observaciones']) ?></span>)</h2>
+    <div class="order-2 lg:col-span-2 bg-white rounded-xl shadow p-5">
+        <h2 class="font-semibold text-gray-900 mb-1">Observaciones (<span id="obsCount"><?= $obsTotal ?></span>)</h2>
+        <p id="obsProgreso" class="text-xs mb-3 <?= $obsPendientes > 0 ? 'text-orange-600' : 'text-green-700' ?>" <?= $obsTotal > 0 ? '' : 'hidden' ?>>
+            <?= $obsAprobadas ?> de <?= $obsTotal ?> aprobada(s)<?= $obsPendientes > 0 ? ' · faltan ' . $obsPendientes : ' · todas aprobadas' ?>
+        </p>
 
         <p id="obsVacio" class="text-sm text-gray-500" <?= empty($documento['observaciones']) ? '' : 'hidden' ?>>Aún no hay observaciones para este documento.</p>
 
-        <div id="obsLista" class="space-y-4">
+        <div id="obsLista" class="space-y-4 max-h-[460px] overflow-y-auto pr-1">
             <?php foreach ($documento['observaciones'] as $obs): ?>
             <?php require VIEW_PATH . '/documentos/_observacion.php'; ?>
             <?php endforeach; ?>
@@ -112,7 +125,7 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
     </div>
 
     <!-- Nueva observación (tutor/admin) -->
-    <div class="space-y-6">
+    <div class="order-1 space-y-6">
         <?php if ($esTrabajo && in_array($rol, ['admin', 'docente'], true)): ?>
         <div class="bg-white rounded-xl shadow p-5">
             <h2 class="font-semibold text-gray-900 mb-1">Observación general</h2>
@@ -159,11 +172,26 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
 
                 function exito(res) {
                     if (vacio) { vacio.hidden = true; }
-                    if (lista && res.html) { lista.insertAdjacentHTML('beforeend', res.html); }
+                    if (lista && res.html) {
+                        var primeraAprobada = lista.querySelector('[data-obs][data-estado="aprobada"]');
+                        if (primeraAprobada) { primeraAprobada.insertAdjacentHTML('beforebegin', res.html); }
+                        else { lista.insertAdjacentHTML('beforeend', res.html); }
+                    }
                     var n = lista ? lista.querySelectorAll('[data-obs]').length : 0;
+                    var aprob = lista ? lista.querySelectorAll('[data-obs][data-estado="aprobada"]').length : 0;
                     if (conteo) { conteo.textContent = n || (parseInt(conteo.textContent, 10) + 1); }
+                    actualizarProgreso(n, aprob);
                     if (frame && frame.contentWindow) { frame.contentWindow.postMessage({ type: 'sigep-repaint' }, '*'); }
                     mostrarToast();
+                }
+
+                function actualizarProgreso(total, aprobadas) {
+                    var prog = document.getElementById('obsProgreso');
+                    if (!prog) { return; }
+                    var faltan = total - aprobadas;
+                    prog.hidden = total === 0;
+                    prog.textContent = aprobadas + ' de ' + total + ' aprobada(s)' + (faltan > 0 ? ' · faltan ' + faltan : ' · todas aprobadas');
+                    prog.className = 'text-xs mb-3 ' + (faltan > 0 ? 'text-orange-600' : 'text-green-700');
                 }
 
                 var toast = document.getElementById('obsToast');

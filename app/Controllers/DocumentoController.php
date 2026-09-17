@@ -103,6 +103,8 @@ class DocumentoController extends Controller
             redirect_to('proyectos/ver/' . $proyectoId);
         }
 
+        $docAnteriorEtapa = $docModel->actualDeEtapa($proyectoId, $etapaId, 'trabajo');
+
         $db = Database::getConnection();
         try {
             $db->beginTransaction();
@@ -134,6 +136,13 @@ class DocumentoController extends Controller
                     'subido_por' => Auth::id(),
                     'estado' => 'enviado',
                 ]);
+            }
+
+            // Al crear una nueva versión, las observaciones de la etapa se enlazan
+            // al documento nuevo para que el tutor siga viéndolas y pueda aprobarlas.
+            if ($docAnteriorEtapa && (int) $docAnteriorEtapa['id'] !== (int) $docId) {
+                $docModel->execute("UPDATE observaciones SET documento_id = ? WHERE documento_id = ?", [$docId, (int) $docAnteriorEtapa['id']]);
+                $docModel->execute("UPDATE anotaciones SET documento_id = ? WHERE documento_id = ?", [$docId, (int) $docAnteriorEtapa['id']]);
             }
 
             // Si el proyecto estaba en borrador, pasa a enviado
@@ -737,6 +746,12 @@ HTML;
         $proyecto = (new Proyecto())->detail((int) $doc['proyecto_id']);
         if (!$proyecto || !$this->canAccess($proyecto)) {
             AuthMiddleware::requireRole('admin');
+        }
+
+        $pendientes = (new Documento())->observacionesPendientesDeEtapa((int) $doc['proyecto_id'], (int) $doc['etapa_id']);
+        if ($pendientes > 0) {
+            flash('error', "No puedes aprobar esta etapa: quedan {$pendientes} observación(es) sin aprobar.");
+            redirect_to('documentos/ver/' . $id);
         }
 
         $rutaTrabajo = UPLOAD_DOCUMENTOS . '/' . $doc['ruta'];

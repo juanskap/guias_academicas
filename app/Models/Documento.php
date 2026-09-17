@@ -77,7 +77,7 @@ class Documento extends Model
              INNER JOIN usuarios u ON u.id = o.usuario_id
              INNER JOIN roles r ON r.id = u.rol_id
              WHERE o.documento_id = ?
-             ORDER BY o.id",
+             ORDER BY (o.estado = 'aprobada') ASC, o.id ASC",
             [$id]
         );
 
@@ -112,6 +112,19 @@ class Documento extends Model
             $obs['respuestas'] = [];
         }
         return $obs;
+    }
+
+    /** Cantidad de observaciones sin aprobar de una etapa (cualquier versión) */
+    public function observacionesPendientesDeEtapa(int $proyectoId, int $etapaId): int
+    {
+        $rows = $this->query(
+            "SELECT COUNT(*) AS n
+             FROM observaciones o
+             INNER JOIN documentos d ON d.id = o.documento_id
+             WHERE d.proyecto_id = ? AND d.etapa_id = ? AND o.estado <> 'aprobada'",
+            [$proyectoId, $etapaId]
+        );
+        return (int) ($rows[0]['n'] ?? 0);
     }
 
     /** Observaciones pendientes de un proyecto (para el tutor) */
