@@ -170,9 +170,9 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
                 var toastTimer;
                 function mostrarToast() {
                     if (!toast) { return; }
-                    toast.style.display = 'flex';
+                    toast.classList.add('visible');
                     clearTimeout(toastTimer);
-                    toastTimer = setTimeout(function () { toast.style.display = 'none'; }, 2200);
+                    toastTimer = setTimeout(function () { toast.classList.remove('visible'); }, 2200);
                 }
 
                 function abrirModal(texto, pages) {
@@ -247,9 +247,14 @@ $reemplaza = $esTrabajo && in_array($documento['estado'], ['enviado', 'en_revisi
     </div>
 </div>
 
-<!-- Aviso de confirmación (no mueve la página) -->
-<div id="obsToast" style="display: none" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] items-center gap-2 bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-lg">
-    <span>✓</span><span>Observación registrada</span>
+<!-- Aviso de confirmación (no mueve la página ni bloquea clics) -->
+<style>
+    #obsToast { opacity: 0; transform: translate(-50%, -14px); transition: opacity .25s ease, transform .25s ease; pointer-events: none; }
+    #obsToast.visible { opacity: 1; transform: translate(-50%, 0); }
+</style>
+<div id="obsToast" class="fixed top-4 left-1/2 z-[60] flex items-center gap-2 bg-green-600 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg">
+    <span class="inline-flex items-center justify-center w-5 h-5 bg-white/25 rounded-full text-xs">✓</span>
+    <span>Observación registrada</span>
 </div>
 
 <!-- Modal para observación sobre texto marcado -->
